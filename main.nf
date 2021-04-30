@@ -15,43 +15,98 @@ nextflow.enable.dsl = 2
 
 def helpMessage(){
     log.info """
-Workflow template'
+Wf-transcript-target
 
 Usage:
-    nextflow run epi2melabs/wf-template [options]
+    nextflow run epi2melabs/wf-transcript-target [options]
 
 Script Options:
-    --fastq        DIR     Path to directory containing FASTQ files (required)
-    --out_dir      DIR     Path for output (default: $params.out_dir)
+    --fastq             DIR     FASTQ file (required)
+    --reference         FILE    Reference FASTA file (required)
+    --out_dir           DIR     Path for output (default: $params.out_dir)
+    --help
+
+    
 """
 }
 
 
-process summariseReads {
-    // concatenate fastq and fastq.gz in a dir
 
-    label "pysam"
+process alignReads {
+    label "wftranscripttarget"
     cpus 1
     input:
-        file "input"
+        file "reads_*.fastq"
+        file reference
+
     output:
-        file "seqs.txt"
-    shell:
+        path "alignment.sam", emit: alignment
     """
-    fastcat -r seqs.txt input/*.fastq* > /dev/null
+    minimap2 -ax map-ont $reference *.fastq > alignment.sam 
+
+"""   
+}
+
+
+process createConsensus {
+    label "wftranscripttarget"
+    cpus 1
+    input:
+        file alignment
+        file "reads_*.fastq"
+        file reference
+       
+    output:
+        path "consensus.fasta", emit: consensus
+    """
+    cat reads_*fastq > reads.fastq 
+    racon reads.fastq $alignment $reference > consensus.fasta 
+    """
+}
+
+process assessAssembly {
+    label "wftranscripttarget"
+    cpus 1
+    input:
+        file consensus
+        file reference
+       
+    output:
+        path "assemblyResult_stats.txt", emit: stats
+        path "assemblyResult_summ.txt", emit: assemblySummary
+    """
+    assess_assembly -r $consensus -i $reference -p assemblyResult > result.txt 
+
     """
 }
 
 
-process makeReport {
-    label "pysam"
-    input:
-        file "seqs.txt"
-    output:
-        file "wf-template-report.html"
-    """
-    report.py wf-template-report.html seqs.txt
-    """
+// workflow module
+workflow pipeline {
+    take:
+        reference
+        fastq
+        
+    main:
+        // Get fastq files from dir path
+        fastq_files = channel
+            .fromPath("${fastq}{**,.}/*.fastq", glob: true)
+            .collect()
+        // Align the two input files and create stats
+        alignment = alignReads(fastq_files, reference)
+
+        //Using output of alignReads find consensus
+        consensus = createConsensus(alignment,fastq_files,reference)
+
+        //Assess consensus vs reference
+        assemblyStats = assessAssembly(consensus,reference)
+        
+    emit:
+        alignment = alignment
+        consensus = consensus
+        stats = assemblyStats.stats
+        summmary = assemblyStats.assemblySummary
+
 }
 
 
@@ -60,7 +115,7 @@ process makeReport {
 // decoupling the publish from the process steps.
 process output {
     // publish inputs to output directory
-    label "pysam"
+    label "wftranscripttarget"
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*"
     input:
         file fname
@@ -72,16 +127,7 @@ process output {
 }
 
 
-// workflow module
-workflow pipeline {
-    take:
-        reads
-    main:
-        summary = summariseReads(reads)
-        report = makeReport(summary)
-    emit:
-        summary.concat(report)
-}
+
 
 // entrypoint workflow
 workflow {
@@ -98,12 +144,24 @@ workflow {
         exit 1
     }
 
-    reads = file("$params.fastq/*.fastq*", type: 'file', maxdepth: 1)
-    if (reads) {
-        reads = Channel.fromPath(params.fastq, type: 'dir', checkIfExists: true)
-        results = pipeline(reads)
-        output(results)
-    } else {
-        println("No .fastq(.gz) files found under `${params.fastq}`.")
+      if (!params.reference) {
+        helpMessage()
+        println("")
+        println("`--reference` is required")
+        exit 1
     }
+
+
+    // Acquire fastq test directory
+    fastq = file(params.fastq, type: "dir", checkIfExists: true)
+
+    // Acquire reference file 
+    reference = file(params.reference, type:"file", checkIfExists:true)
+
+    // Run Bioinformatics pipeline
+    results = pipeline(reference,fastq)
+
+    //output(results.consensus,results.alignment,results.assemblyStats.stats,results.a.assemblySummary)
+    output(results.alignment.concat(
+        results.consensus,results.stats,results.summmary))
 }

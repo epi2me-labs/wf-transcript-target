@@ -206,7 +206,7 @@ The image is built from the Dockerfile present in the git repository. Users
 wishing to modify and build the image can do so with:
 
 ```
-CONTAINER_TAG=ontresearch/wf-template:latest
+CONTAINER_TAG=ontresearch/wf-transcript-target:latest
 
 git clone https://github.com/epi2me-labs/wf-template
 cd wf-template
