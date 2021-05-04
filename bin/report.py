@@ -16,8 +16,7 @@ def main():
     stats = args.summaries
     statsdf = pd.read_csv(stats[0], sep='\t')
     statsdf = statsdf.drop(['ref', 'rstart', 'rend', 'ref_coverage'], 1)
-    report = HTMLReport(
-        "Workflow Transcript Target report",
+    report = HTMLReport("Workflow Transcript Target report",
         ("Results generated through the wf-transcript target nextflow"
             "workflow by Oxford Nanopore Technologies"))
     report.markdown("## Assembly stats")
@@ -44,3 +43,4 @@ workflow can be run using `nextflow epi2me-labs/wf-template --help`
 
 if __name__ == "__main__":
     main()
+    
