@@ -1,16 +1,10 @@
 #!/usr/bin/env python
 """Create workflow report."""
 
-import argparse
-import numpy as np
-import pandas as pd
-
-
-
-from aplanat.components import fastcat
 from aplanat.report import HTMLReport
 
-
+import argparse
+import pandas as pd
 
 def main():
     """Run the entry point."""
@@ -49,11 +43,8 @@ workflow can be run using `nextflow epi2me-labs/wf-template --help`
 
 ---
 ''')
-
-    # write report
-  
+    # write report  
     report.write(args.report)
-
 
 if __name__ == "__main__":
     main()
