@@ -4,8 +4,8 @@
 import argparse
 
 from aplanat.report import HTMLReport
-
 import pandas as pd
+
 
 def main():
     """Run the entry point."""
@@ -15,7 +15,7 @@ def main():
     args = parser.parse_args()
     stats = args.summaries
     statsdf = pd.read_csv(stats[0], sep='\t')
-    statsdf = statsdf.drop(['ref' ,'rstart' ,'rend' ,'ref_coverage'] , 1)
+    statsdf = statsdf.drop(['ref', 'rstart', 'rend', 'ref_coverage'], 1)
     report = HTMLReport(
         "Workflow Transcript Target report",
         ("Results generated through the wf-transcript target nextflow"
@@ -23,7 +23,7 @@ def main():
     report.markdown("## Assembly stats")
     report.markdown(
         "The following summarises the statistics from the consensus assembly"
-         "with the reference")
+        "with the reference")
     report.table(
         statsdf, index=False)
     report.markdown('''
