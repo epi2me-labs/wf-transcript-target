@@ -1,10 +1,3 @@
-# Workflow template
-
-This repository contains a [nextflow](https://www.nextflow.io/) workflow
-template that can be used as the basis for creating new workflows.
-
-> This workflow is not intended to be used by end users.
-
 
 ## Quickstart
 
@@ -26,7 +19,7 @@ either docker of conda is installed.
 To obtain the workflow, having installed `nextflow`, users can run:
 
 ```
-nextflow run epi2me-labs/wf-template --help
+nextflow run epi2me-labs/wf-transcript-target --help
 ```
 
 to see the options for the workflow.
@@ -78,7 +71,7 @@ Nextflow and Docker in order to run the workflow.
 
 ## Running the workflow
 
-The `wf-template` workflow can be controlled by the following parameters. The `fastq` parameter
+The `wf-transcript-target` workflow can be controlled by the following parameters. The `fastq` parameter
 is the most important parameter: it is required to identify the location of the
 sequence files to be analysed.
 
@@ -90,16 +83,17 @@ sequence files to be analysed.
 To run the workflow using Docker containers supply the `-profile standard`
 argument to `nextflow run`:
 
-> The command below uses test data available from the [github repository](https://github.com/epi2me-labs/wf-template/tree/master/test_data)
-> It can be obtained with `git clone https://github.com/epi2me-labs/wf-template`.
+> The command below uses test data available from the [github repository](https://github.com/epi2me-labs/wf-transcript-target/tree/master/test_data)
+> It can be obtained with `git clone https://github.com/epi2me-labs/wf-transcript-target`.
 
 ```
 # run the pipeline with the test data
 OUTPUT=output
-nextflow run epi2me-labs/wf-template \
+nextflow run epi2me-labs/wf-transcript-target \
     -w ${OUTPUT}/workspace \
     -profile standard \
-    --fastq test_data \
+    --fastq test_data/fastq \
+    --reference test_data/references/reference.fasta \
     --out_dir ${OUTPUT}
 ```
 
@@ -146,7 +140,7 @@ and running the workflow providing the `-c` (config) option, e.g.:
 
 ```
 # run the pipeline with custom configuration
-nextflow run epi2me-labs/wf-template \
+nextflow run epi2me-labs/wf-transcript-target \
     -c my_config.cfg \
     ...
 ```
@@ -183,7 +177,7 @@ profiles {
 and running nextflow by setting the profile to `fixed_conda`:
 
 ```
-nextflow run epi2me-labs/wf-template \
+nextflow run epi2me-labs/wf-transcript-target \
     -c my_config.cfg \
     -profile fixed_conda \
     ...
@@ -196,20 +190,20 @@ indicating that an update to the workflow is available.
 
 To update the workflow simply run:
 
-    nextflow pull epi2me-labs/wf-template
+    nextflow pull epi2me-labs/wf-transcript-target
 
 ## Building the docker container from source
 
-The docker image used for running the `wf-template` workflow is available on
-[dockerhub](https://hub.docker.com/repository/docker/ontresearch/wf-template).
+The docker image used for running the `wf-transcript-target` workflow is available on
+[dockerhub](https://hub.docker.com/repository/docker/ontresearch/wf-transcript-target).
 The image is built from the Dockerfile present in the git repository. Users
 wishing to modify and build the image can do so with:
 
 ```
 CONTAINER_TAG=ontresearch/wf-transcript-target:latest
 
-git clone https://github.com/epi2me-labs/wf-template
-cd wf-template
+git clone https://github.com/epi2me-labs/wf-transcript-target
+cd wf-transcript-target
 
 docker build \
     -t ${CONTAINER_TAG} -f Dockerfile \
@@ -221,7 +215,7 @@ In order to run the workflow with this new image it is required to give
 `nextflow` the `--wfversion` parameter:
 
 ```
-nextflow run epi2me-labs/wf-template \
+nextflow run epi2me-labs/wf-transcript-target \
     --wfversion latest
 ```
 
