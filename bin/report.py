@@ -19,7 +19,7 @@ def main():
     report = HTMLReport(
         "Workflow Transcript Target report",
         ("Results generated through the wf-transcript target nextflow"
-        "workflow by Oxford Nanopore Technologies"))
+         "workflow by Oxford Nanopore Technologies"))
     report.markdown("## Assembly stats")
     report.markdown(
         "The following summarises the statistics from the consensus assembly"
@@ -38,10 +38,9 @@ This report was produced using the
 workflow can be run using `nextflow epi2me-labs/wf-template --help`
 ---
 ''')
-    # write report  
+    # write report
     report.write(args.report)
 
 
 if __name__ == "__main__":
     main()
-#end
