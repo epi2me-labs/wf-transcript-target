@@ -2,9 +2,14 @@
 """Create workflow report."""
 
 import argparse
+import numpy as np
+import pandas as pd
+
+
 
 from aplanat.components import fastcat
 from aplanat.report import HTMLReport
+
 
 
 def main():
@@ -13,14 +18,23 @@ def main():
     parser.add_argument("report", help="Report output file")
     parser.add_argument("summaries", nargs='+', help="Read summary file.")
     args = parser.parse_args()
-
+    stats = args.summaries
+    statsdf = pd.read_csv(stats[0], sep='\t')
+    statsdf = statsdf.drop(['ref','rstart','rend','ref_coverage'], 1)
+    
     report = HTMLReport(
-        "Workflow Template Sequencing report",
-        ("Results generated through the wf-template nextflow "
+        "Workflow Transcript Target report",
+        ("Results generated through the wf-transcript target nextflow "
             "workflow by Oxford Nanopore Technologies"))
 
-    report.add_section(
-        section=fastcat.full_report(args.summaries))
+   
+    report.markdown("## Assembly stats")
+    report.markdown(
+        "The following summarises the statistics from the consensus assembly with the reference")
+    
+    report.table(
+        statsdf, index=False)
+    
 
     report.markdown('''
 ### About
@@ -37,6 +51,7 @@ workflow can be run using `nextflow epi2me-labs/wf-template --help`
 ''')
 
     # write report
+  
     report.write(args.report)
 
 

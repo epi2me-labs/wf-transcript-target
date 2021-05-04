@@ -81,6 +81,20 @@ process assessAssembly {
 }
 
 
+process report {
+    label "wftranscripttarget"
+    cpus 1
+    input:
+        file assemblyStats
+
+    output:
+        path "wf-transcript-target.html", emit: report
+    """
+    report.py wf-transcript-target.html $assemblyStats 
+
+    """
+}
+
 // workflow module
 workflow pipeline {
     take:
@@ -100,14 +114,18 @@ workflow pipeline {
 
         //Assess consensus vs reference
         assemblyStats = assessAssembly(consensus,reference)
+
+        //report
+        report = report(assemblyStats.stats)
         
     emit:
         alignment = alignment
         consensus = consensus
         stats = assemblyStats.stats
         summmary = assemblyStats.assemblySummary
-
+        report = report
 }
+
 
 
 // See https://github.com/nextflow-io/nextflow/issues/1636
@@ -163,5 +181,5 @@ workflow {
 
     //output(results.consensus,results.alignment,results.assemblyStats.stats,results.a.assemblySummary)
     output(results.alignment.concat(
-        results.consensus,results.stats,results.summmary))
+        results.consensus,results.stats,results.summmary,results.report))
 }
