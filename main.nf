@@ -75,7 +75,7 @@ process assessAssembly {
         path "assemblyResult_stats.txt", emit: stats
         path "assemblyResult_summ.txt", emit: assemblySummary
     """
-    assess_assembly -r $consensus -i $reference -p assemblyResult > result.txt 
+    assess_assembly -i $consensus -r $reference -p assemblyResult > result.txt 
 
     """
 }
