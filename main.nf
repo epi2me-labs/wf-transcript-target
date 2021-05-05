@@ -41,8 +41,10 @@ process alignReads {
 
     output:
         path "alignment.sam", emit: alignment
+        path "alignmentStats.tsv", emit: alignmentStats
     """
     minimap2 -ax map-ont $reference *.fastq > alignment.sam 
+    samtools flagstat alignment.sam -O tsv > alignmentStats.tsv
 
 """   
 }
@@ -86,11 +88,12 @@ process report {
     cpus 1
     input:
         file assemblyStats
+        file alignStats
 
     output:
         path "wf-transcript-target.html", emit: report
     """
-    report.py wf-transcript-target.html $assemblyStats 
+    report.py wf-transcript-target.html $assemblyStats $alignStats
 
     """
 }
@@ -107,19 +110,20 @@ workflow pipeline {
             .fromPath("${fastq}{**,.}/*.fastq", glob: true)
             .collect()
         // Align the two input files and create stats
-        alignment = alignReads(fastq_files, reference)
+        alignments = alignReads(fastq_files, reference)
 
         //Using output of alignReads find consensus
-        consensus = createConsensus(alignment,fastq_files,reference)
+        consensus = createConsensus(alignments.alignment,fastq_files,reference)
 
         //Assess consensus vs reference
         assemblyStats = assessAssembly(consensus,reference)
 
         //report
-        report = report(assemblyStats.stats)
+        report = report(assemblyStats.stats,alignments.alignmentStats)
         
     emit:
-        alignment = alignment
+        alignment = alignments.alignment
+        alignmentStats = alignments.alignmentStats
         consensus = consensus
         stats = assemblyStats.stats
         summmary = assemblyStats.assemblySummary
@@ -181,5 +185,5 @@ workflow {
 
     //output(results.consensus,results.alignment,results.assemblyStats.stats,results.a.assemblySummary)
     output(results.alignment.concat(
-        results.consensus,results.stats,results.summmary,results.report))
+        results.alignmentStats,results.consensus,results.stats,results.summmary,results.report))
 }
