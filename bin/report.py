@@ -3,8 +3,8 @@
 
 import argparse
 
-from aplanat.report import HTMLReport
 import aplanat.graphics
+from aplanat.report import HTMLReport
 import pandas as pd
 
 
