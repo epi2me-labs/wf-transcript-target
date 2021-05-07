@@ -3,10 +3,10 @@
 import argparse
 
 import aplanat.graphics
-from aplanat.report import HTMLReport
 from aplanat.components import fastcat
-from bokeh.layouts import layout
+from aplanat.report import HTMLReport
 
+from bokeh.layouts import layout
 import conda_versions
 import pandas as pd
 
@@ -87,11 +87,8 @@ assessment or to diagnose, treat, mitigate, cure or prevent any disease or
 condition.**
 ---
 ''')
-
-
     # write report
     report.write(args.report)
-
 
 if __name__ == "__main__":
     main()
