@@ -78,7 +78,9 @@ sequence files to be analysed.
 **Parameters:**
 
 - `fastq` specifies a *directory* path to FASTQ files (required)
+- `reference` specifies the reference file
 - `out_dir` the path for the output (default: output)
+- `bam`     optional boolean. Specifies output of Bam alignment files (default: false)
 
 To run the workflow using Docker containers supply the `-profile standard`
 argument to `nextflow run`:
@@ -97,10 +99,17 @@ nextflow run epi2me-labs/wf-transcript-target \
     --out_dir ${OUTPUT}
 ```
 
+**Output:**
+
 The output of the pipeline will be found in `./output` for the above
 example. This directory contains the nextflow working directories alongside
-the two primary outputs of the pipeline: a `seqs.txt` file containing a summary
-of all reads, and a `report.html` file summarising the workflows calculations.
+the primary outputs of the pipeline:
+
+- `report.html`          file summarising the workflow analysis
+- `readsAligned.bam`     bam file of alignment of sequences with reference
+- `readsAligned.bam.bai` Indexed alignment file
+- `consensus.fasta`      file containing consensus sequence of input sequences
+
 
 ### Running the workflow with Conda
 
