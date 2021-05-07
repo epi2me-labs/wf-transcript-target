@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Create workflow report."""
 
 import argparse
