@@ -6,7 +6,9 @@ from aplanat.components import fastcat
 import aplanat.graphics
 
 from aplanat.report import HTMLReport
+
 from bokeh.layouts import layout
+
 import conda_versions
 import pandas as pd
 
