@@ -2,10 +2,10 @@
 
 import argparse
 
-import aplanat.graphics
 from aplanat.components import fastcat
-from aplanat.report import HTMLReport
+import aplanat.graphics
 
+from aplanat.report import HTMLReport
 from bokeh.layouts import layout
 import conda_versions
 import pandas as pd
@@ -89,6 +89,7 @@ condition.**
 ''')
     # write report
     report.write(args.report)
+
 
 if __name__ == "__main__":
     main()
