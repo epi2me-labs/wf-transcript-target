@@ -5,10 +5,13 @@ import argparse
 
 import aplanat.graphics
 from aplanat.report import HTMLReport
+<<<<<<< HEAD
 from aplanat.components import fastcat
 from bokeh.layouts import layout
 
 import conda_versions
+=======
+>>>>>>> fb57d0b32f040782a28953c00d9fb8b2dfff4004
 import pandas as pd
 
 
