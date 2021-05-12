@@ -10,8 +10,8 @@ Usage:
     nextflow run epi2melabs/wf-transcript-target [options]
 
 Script Options:
-    --fastq             DIR     FASTQ file (required)
-    --reference         FILE    Reference FASTA file (required)
+    --fastq             DIR     FASTQ files (required)
+    --reference         DIR     Reference FASTA files(required)
     --out_dir           DIR     Path for output (default: $params.out_dir)
     --bam               BOOL    If false, bam files will not be made available in output (default: false)
     --help
@@ -31,6 +31,20 @@ process fastcatQuality {
     """
 }
 
+
+process combineReferences {
+    label "wftranscripttarget"
+    cpus 1
+    input:
+        file "reference_*_.fasta"
+    output:
+        path "combined.fasta", emit: combined
+    """
+    cat reference_*_.fasta > "combined.fasta"
+    """
+}
+
+
 process alignReads {
     label "wftranscripttarget"
     cpus 1
@@ -43,36 +57,64 @@ process alignReads {
         path "alignmentStats.tsv", emit: alignmentStats
         path "readsAligned.bam", emit: alignmentBam
         path "readsAligned.bam.bai", emit: indexed
+        path "*REF_*.bam", emit: splitBam
+   
+
     """
     minimap2 -ax map-ont $reference *.fastq > alignment.sam 
     samtools flagstat alignment.sam -O tsv > alignmentStats.tsv
     samtools sort alignment.sam -o readsAligned.bam
     samtools index readsAligned.bam
+    bamtools split -in readsAligned.bam -mapped
+    mv readsAligned.MAPPED.bam alignedReads.bam
+    bamtools split -in alignedReads.bam -reference 
 
 
 """   
 }
 
-process createConsensus {
+process createTuples {
+    label "wftranscripttarget"
+    cpus 1 
+    input:
+        each file(reg) 
+        file combined
+    output:
+        tuple val("$refname"), path ("*.sam"), path ("*.fastq"), path ("*.fasta"), emit: eachAlignment
+
+    script:
+        refname = "$reg".split(/\./)[1].substring(4);  
+        
+    """
+    samtools view -h -o "$refname".sam $reg
+    samtools fastq $reg > "$refname".fastq
+    grep -i "$refname" -A1 $combined > "$refname".fasta
+
+    """
+
+}
+
+process consensusSeq {
     label "wftranscripttarget"
     cpus 1
     input:
-        file alignment
-        file "reads_*.fastq"
-        file reference
-       
+        tuple val(refname), path (alignment), path (reads), path (reference)
+        
     output:
-        path "consensus.fasta", emit: seq
+        path "*Consensus.fasta", emit: seq
         path "consensusAligned.bam", emit: alignment
         path "consensusAligned.bam.bai", emit: indexed
+        path "$reference" , emit: reference
+    
     """
-    cat reads_*fastq > reads.fastq 
-    racon reads.fastq $alignment $reference > consensus.fasta 
-    minimap2 -ax map-ont $reference consensus.fasta > consensusAligned.sam 
+   
+    racon $reads $alignment $reference > "$refname"Consensus.fasta
+    minimap2 -ax map-ont $reference "$refname"Consensus.fasta > consensusAligned.sam 
     samtools sort consensusAligned.sam  -o consensusAligned.bam
     samtools index consensusAligned.bam
     """
 }
+
 
 process assessAssembly {
     label "wftranscripttarget"
@@ -80,7 +122,6 @@ process assessAssembly {
     input:
         file consensusSequence
         file reference
-       
     output:
         path "assemblyResult_stats.txt", emit: stats
     """
@@ -107,28 +148,41 @@ process report {
 // workflow module
 workflow pipeline {
     take:
+     
         reference
         fastq
     main:
+
+         // Get reference fasta files from dir path
+        reference_files = channel
+            .fromPath("${reference}/*", glob: true)
+            .collect()
+
+        // Cat the references together for alignmxent
+        combinedRef = combineReferences(reference_files)
+
         // Get fastq files from dir path
         fastq_files = channel
             .fromPath("${fastq}{**,.}/*.fastq", glob: true)
             .collect()
-         //quality step
+
+        //Check overall quality 
         quality = fastcatQuality(fastq_files)
-        // Align the two input files and create stats
-        alignments = alignReads(fastq_files, reference)
 
-        // Using output of alignReads find consensus
-        consensus = createConsensus(alignments.alignment, fastq_files, reference)
+        // Align the ref and samples and output one bam per reference
+        alignments = alignReads(fastq_files, combinedRef)
         
+        
+        // Create tuples with data needed for Racon (samplename,fastq,sam,fasta)
+        seperated = createTuples(alignments.splitBam,combinedRef)
+       
+        //Find consensus for each reference
+        consensus = consensusSeq(seperated.eachAlignment)
+      
         // Assess consensus vs reference
-        assemblyStats = assessAssembly(consensus.seq, reference)
+        assemblyStats = assessAssembly(consensus.seq, consensus.reference)
 
-        // report
-        report = report(assemblyStats.stats,
-                        alignments.alignmentStats,
-                        quality.perRead)
+       
         // output optional bam alignment files
         consensusAlignment = null
         consensusIndex = null
@@ -143,13 +197,21 @@ workflow pipeline {
         alignmentBam = alignments.alignmentBam
         alignmentIndex = alignments.indexed
         consensusSeq = consensus.seq
-    
+        // create report
+        report = report(assemblyStats.stats,
+                      alignments.alignmentStats,
+                        quality.perRead)
+
         results = alignmentBam.concat(
+            combinedRef,
+            alignments.alignmentBam,
             alignmentIndex,
             consensusSeq, 
+            report,
             consensusAlignment,
             consensusIndex,
-            report)
+            
+            )
            
 
     emit:
@@ -199,8 +261,8 @@ workflow {
     fastq = file(params.fastq, type: "dir", checkIfExists: true)
 
     // Acquire reference file
-    reference = file(params.reference, type: "file", checkIfExists: true)
-
+    reference = file(params.reference, type: "dir", checkIfExists: true)
+ 
     // Run Bioinformatics pipeline
     results = pipeline(reference, fastq)
 

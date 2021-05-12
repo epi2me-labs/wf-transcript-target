@@ -95,7 +95,7 @@ nextflow run epi2me-labs/wf-transcript-target \
     -w ${OUTPUT}/workspace \
     -profile standard \
     --fastq test_data/fastq \
-    --reference test_data/references/reference.fasta \
+    --reference test_data/references \
     --out_dir ${OUTPUT}
 ```
 
@@ -105,10 +105,12 @@ The output of the pipeline will be found in `./output` for the above
 example. This directory contains the nextflow working directories alongside
 the primary outputs of the pipeline:
 
-- `report.html`          file summarising the workflow analysis
-- `readsAligned.bam`     bam file of alignment of sequences with reference
-- `readsAligned.bam.bai` Indexed alignment file
-- `consensus.fasta`      file containing consensus sequence of input sequences
+- `report.html`               file summarising the workflow analysis
+- `readsAligned.bam`          bam file of alignment of sequences with reference
+- `readsAligned.bam.bai`      Indexed alignment file
+- `consensus.fasta`           file containing consensus sequence of input sequences
+- `consensusAligned.bam`      bam file of consensus aligned with reference
+- `consensusAligned.bam.bai`  Indexed aligned consensus file
 
 
 ### Running the workflow with Conda
