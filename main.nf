@@ -68,6 +68,7 @@ process alignReads {
     bamtools split -in readsAligned.bam -mapped
     mv readsAligned.MAPPED.bam alignedReads.bam
     bamtools split -in alignedReads.bam -reference 
+    
 
 
 """   
@@ -81,11 +82,12 @@ process createTuples {
         file combined
     output:
         tuple val("$refname"), path ("*.sam"), path ("*.fastq"), path ("*.fasta"), emit: eachAlignment
-
+        path "*.tsv", emit: alignmentStats
     script:
         refname = "$reg".split(/\./)[1].substring(4);  
         
     """
+    samtools flagstat $reg -O tsv > "$refname"alignmentStats.tsv
     samtools view -h -o "$refname".sam $reg
     samtools fastq $reg > "$refname".fastq
     grep -i "$refname" -A1 $combined > "$refname".fasta
@@ -102,16 +104,17 @@ process consensusSeq {
         
     output:
         path "*Consensus.fasta", emit: seq
-        path "consensusAligned.bam", emit: alignment
-        path "consensusAligned.bam.bai", emit: indexed
+        path "*consensusAligned.bam", emit: alignment
+        path "*consensusAligned.bam.bai", emit: indexed
         path "$reference" , emit: reference
+        val "$refname", emit: refname
     
     """
    
     racon $reads $alignment $reference > "$refname"Consensus.fasta
     minimap2 -ax map-ont $reference "$refname"Consensus.fasta > consensusAligned.sam 
-    samtools sort consensusAligned.sam  -o consensusAligned.bam
-    samtools index consensusAligned.bam
+    samtools sort consensusAligned.sam  -o "$refname"consensusAligned.bam
+    samtools index "$refname"consensusAligned.bam
     """
 }
 
@@ -122,10 +125,11 @@ process assessAssembly {
     input:
         file consensusSequence
         file reference
+        val refname
     output:
-        path "assemblyResult_stats.txt", emit: stats
+        path "*_stats.txt", emit: stats
     """
-    assess_assembly -i $consensusSequence -r $reference -p assemblyResult > result.txt 
+    assess_assembly -i $consensusSequence -r $reference -p "$refname" > result.txt 
 
     """
 }
@@ -135,15 +139,19 @@ process report {
     label "wftranscripttarget"
     cpus 1
     input:
-        file assemblyStats
+        file "assembly_stats/*" 
+        file "alignment_stats/*"
         file alignStats
         file qualityPerRead
+        
+        
     output:
         path "wf-transcript-target.html", emit: report
     """
-    report.py wf-transcript-target.html $assemblyStats $alignStats $qualityPerRead
+    report.py wf-transcript-target.html $alignStats $qualityPerRead --summaries assembly_stats/* --flagstats alignment_stats/* 
 
     """
+    
 }
 // workflow module
 workflow pipeline {
@@ -180,8 +188,7 @@ workflow pipeline {
         consensus = consensusSeq(seperated.eachAlignment)
       
         // Assess consensus vs reference
-        assemblyStats = assessAssembly(consensus.seq, consensus.reference)
-
+        assemblyStats = assessAssembly(consensus.seq, consensus.reference, consensus.refname)
        
         // output optional bam alignment files
         consensusAlignment = null
@@ -198,9 +205,11 @@ workflow pipeline {
         alignmentIndex = alignments.indexed
         consensusSeq = consensus.seq
         // create report
-        report = report(assemblyStats.stats,
+        report = report(assemblyStats.stats.collect(),
+                    seperated.alignmentStats.collect(),
                       alignments.alignmentStats,
-                        quality.perRead)
+                        quality.perRead,
+                        )
 
         results = alignmentBam.concat(
             combinedRef,
