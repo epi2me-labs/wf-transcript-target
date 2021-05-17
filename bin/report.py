@@ -8,7 +8,6 @@ import aplanat.graphics
 from aplanat.report import HTMLReport
 from bokeh.layouts import layout
 import conda_versions
-
 import numpy as np
 import pandas as pd
 
@@ -22,7 +21,7 @@ def read_files(summaries, sep='\t'):
 
 
 def read_flag_stat_files(flagstats, sep='\t'):
-    """Read a set of flag stat files and extract total alignments"""
+    """Read a set of flag stat files and extract total alignments."""
     flagStatList = []
     for fname in sorted(flagstats):
         alignStats = pd.read_csv(fname, sep='\t', header=None)
