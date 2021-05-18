@@ -3,8 +3,8 @@
 
 import argparse
 
-from aplanat.components import fastcat
 from aplanat import report
+from aplanat.components import fastcat
 import aplanat.graphics
 from bokeh.layouts import layout
 import conda_versions
