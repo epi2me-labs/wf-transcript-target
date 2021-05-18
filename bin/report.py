@@ -87,7 +87,6 @@ def main():
     consensus_df[''] = np.where(
         consensus_df['Consensus Accuracy %'] < 98.0,
         'Warning', '')
-
     section = report_doc.add_section()
     section.markdown("## Summary")
     section.markdown(" This table summarises the consensus accuracy",
@@ -132,7 +131,7 @@ def main():
     section.markdown('''The table below highlights versions
                     of key software used within the analysis''')
     req = [
-        'minimap2', 'samtools', 'racon', 'pomoxis', 'fastcat']
+        'minimap2', 'samtools', 'racon', 'pomoxis', 'fastcat', 'bamtools']
     versions = conda_versions.scrape_data(
         as_dataframe=True, include=req)
     section.table(versions[['Name', 'Version', 'Build']], index=False)

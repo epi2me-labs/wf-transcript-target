@@ -2,6 +2,7 @@
 
 nextflow.enable.dsl = 2
 
+
 def helpMessage(){
     log.info """
 Wf-transcript-target
@@ -19,6 +20,7 @@ Script Options:
 """
 }
 
+
 process fastcatQuality {
     // publish inputs to output directory
     label "wftranscripttarget"
@@ -27,7 +29,7 @@ process fastcatQuality {
     output:
         path "per-read.txt", emit: perRead
     """
-    fastcat -f file-summary.txt -r per-read.txt *.fastq 
+    fastcat -f file-summary.txt -r per-read.txt *.fastq
     """
 }
 
@@ -58,34 +60,31 @@ process alignReads {
         path "readsAligned.bam", emit: alignmentBam
         path "readsAligned.bam.bai", emit: indexed
         path "*REF_*.bam", emit: splitBam
-   
+
 
     """
-    minimap2 -ax map-ont $reference *.fastq > alignment.sam 
+    minimap2 -ax map-ont $reference *.fastq > alignment.sam
     samtools flagstat alignment.sam -O tsv > alignmentStats.tsv
     samtools sort alignment.sam -o readsAligned.bam
     samtools index readsAligned.bam
     bamtools split -in readsAligned.bam -mapped
     mv readsAligned.MAPPED.bam alignedReads.bam
-    bamtools split -in alignedReads.bam -reference 
-    
-
-
-"""   
+    bamtools split -in alignedReads.bam -reference
+"""
 }
 
 process createTuples {
     label "wftranscripttarget"
-    cpus 1 
+    cpus 1
     input:
-        each file(reg) 
+        each file(reg)
         file combined
     output:
-        tuple val("$refname"), path ("*.sam"), path ("*.fastq"), path ("*.fasta"), emit: eachAlignment
+        tuple val("$refname"), path("*.sam"), path("*.fastq"), path("*.fasta"), emit: eachAlignment
         path "*.tsv", emit: alignmentStats
     script:
-        refname = "$reg".split(/\./)[1].substring(4);  
-        
+        refname = "$reg".split(/\./)[1].substring(4);
+
     """
     samtools flagstat $reg -O tsv > "$refname"alignmentStats.tsv
     samtools view -h -o "$refname".sam $reg
@@ -100,19 +99,19 @@ process consensusSeq {
     label "wftranscripttarget"
     cpus 1
     input:
-        tuple val(refname), path (alignment), path (reads), path (reference)
-        
+        tuple val(refname), path(alignment), path(reads), path(reference)
+
     output:
         path "*Consensus.fasta", emit: seq
         path "*consensusAligned.bam", emit: alignment
         path "*consensusAligned.bam.bai", emit: indexed
-        path "$reference" , emit: reference
+        path "$reference", emit: reference
         val "$refname", emit: refname
-    
+
     """
-   
+
     racon $reads $alignment $reference > "$refname"Consensus.fasta
-    minimap2 -ax map-ont $reference "$refname"Consensus.fasta > consensusAligned.sam 
+    minimap2 -ax map-ont $reference "$refname"Consensus.fasta > consensusAligned.sam
     samtools sort consensusAligned.sam  -o "$refname"consensusAligned.bam
     samtools index "$refname"consensusAligned.bam
     """
@@ -129,7 +128,7 @@ process assessAssembly {
     output:
         path "*_stats.txt", emit: stats
     """
-    assess_assembly -i $consensusSequence -r $reference -p "$refname" > result.txt 
+    assess_assembly -i $consensusSequence -r $reference -p "$refname" > result.txt
 
     """
 }
@@ -139,98 +138,93 @@ process report {
     label "wftranscripttarget"
     cpus 1
     input:
-        file "assembly_stats/*" 
+        file "assembly_stats/*"
         file "alignment_stats/*"
         file alignStats
         file qualityPerRead
-        
-        
+
     output:
         path "wf-transcript-target.html", emit: report
     """
-    report.py wf-transcript-target.html $alignStats $qualityPerRead --revision $workflow.revision --commit $workflow.commitId --summaries assembly_stats/* --flagstats alignment_stats/* 
+    report.py wf-transcript-target.html $alignStats $qualityPerRead \
+    --revision $workflow.revision --commit $workflow.commitId \
+    --summaries assembly_stats/* --flagstats alignment_stats/*
 
     """
-    
 }
 // workflow module
 workflow pipeline {
     take:
-     
+
         reference
         fastq
     main:
 
-         // Get reference fasta files from dir path
+        // Get reference fasta files from dir path
         reference_files = channel
-            .fromPath("${reference}/*", glob: true)
-            .collect()
+        .fromPath("${reference}/*", glob: true)
+        .collect()
 
         // Cat the references together for alignmxent
         combinedRef = combineReferences(reference_files)
 
         // Get fastq files from dir path
         fastq_files = channel
-            .fromPath("${fastq}{**,.}/*.fastq", glob: true)
-            .collect()
+        .fromPath("${fastq}{**,.}/*.fastq", glob: true)
+        .collect()
 
-        //Check overall quality 
+        // Check overall quality
         quality = fastcatQuality(fastq_files)
 
         // Align the ref and samples and output one bam per reference
         alignments = alignReads(fastq_files, combinedRef)
-        
-        
-        // Create tuples with data needed for Racon (samplename,fastq,sam,fasta)
-        seperated = createTuples(alignments.splitBam,combinedRef)
-       
-        //Find consensus for each reference
+
+        // Create tuples with data needed for Racon(name, fastq, sam, fasta)
+        seperated = createTuples(alignments.splitBam, combinedRef)
+
+        // Find consensus for each reference
         consensus = consensusSeq(seperated.eachAlignment)
-      
+
         // Assess consensus vs reference
-        assemblyStats = assessAssembly(consensus.seq, consensus.reference, consensus.refname)
-       
+        assemblyStats = assessAssembly(consensus.seq,
+                                       consensus.reference,
+                                       consensus.refname)
+
         // output optional bam alignment files
         consensusAlignment = null
         consensusIndex = null
         if (params.bam == false) {
             println("")
-        } else {
+            }
+        else {
             consensusAlignment = consensus.alignment
-            consensusIndex = consensus.indexed   
-        }
-
-        //emit results 
+            consensusIndex = consensus.indexed
+            }
+        // emit results
         alignmentBam = alignments.alignmentBam
         alignmentIndex = alignments.indexed
         consensusSeq = consensus.seq
         // create report
         report = report(assemblyStats.stats.collect(),
-                    seperated.alignmentStats.collect(),
-                      alignments.alignmentStats,
-                        quality.perRead,
+                        seperated.alignmentStats.collect(),
+                        alignments.alignmentStats,
+                        quality.perRead
                         )
 
         results = alignmentBam.concat(
             combinedRef,
             alignments.alignmentBam,
             alignmentIndex,
-            consensusSeq, 
+            consensusSeq,
             report,
             consensusAlignment,
             consensusIndex,
-            
             )
-           
 
     emit:
         results
-        
 }
 
-// See https://github.com/nextflow-io/nextflow/issues/1636
-// This is the only way to publish files from a workflow whilst
-// decoupling the publish from the process steps.
 process output {
     // publish inputs to output directory
     label "wftranscripttarget"
@@ -271,11 +265,11 @@ workflow {
 
     // Acquire reference file
     reference = file(params.reference, type: "dir", checkIfExists: true)
- 
+
     // Run Bioinformatics pipeline
     results = pipeline(reference, fastq)
 
     // output files
     output(results)
-  
-} 
+
+}
