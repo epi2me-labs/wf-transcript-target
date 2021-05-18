@@ -5,7 +5,7 @@ import argparse
 
 from aplanat.components import fastcat
 import aplanat.graphics
-from aplanat.report import HTMLReport
+from aplanat import report
 from bokeh.layouts import layout
 import conda_versions
 import numpy as np
@@ -35,7 +35,7 @@ def main():
     """Run the entry point."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "report",
+        "output",
         help="Report output file.")
     parser.add_argument(
         "alignmentStats",
@@ -44,6 +44,12 @@ def main():
         "quality",
         help="Fastcat quality results.")
     parser.add_argument(
+        "--revision", default='unknown',
+        help="git branch/tag of the executed workflow")
+    parser.add_argument(
+        "--commit", default='unknown',
+        help="git commit of the executed workflow")
+    parser.add_argument(
         "--summaries", nargs='+',
         help="Read summary file.")
     parser.add_argument(
@@ -51,10 +57,10 @@ def main():
         help="Flag stat summaries")
     args = parser.parse_args()
 
-    report = HTMLReport(
-        "Workflow Transcript Target report",
-        ("Results generated through the wf-transcript target nextflow"
-         " workflow by Oxford Nanopore Technologies"))
+    report_doc = report.WFReport(
+        "Transcript target report", "wf-transcript-target",
+        revision=args.revision, commit=args.commit)
+
     flag_stats = read_flag_stat_files(args.flagstats)
 
     # Retrieve flag and consensus stats and create df
@@ -81,52 +87,58 @@ def main():
     consensus_df[''] = np.where(
         consensus_df['Consensus Accuracy %'] < 98.0,
         'Warning', '')
-    report.markdown("### Summary", key="exec-head")
-    report.markdown(
-        "This table summarises the consensus accuracy"
-        " and alignment stats for each reference",
-        key="exec-desc")
-    report.table(consensus_df, index=False)
+
+    section = report_doc.add_section()
+    section.markdown("## Summary")
+    section.markdown(" This table summarises the consensus accuracy",
+                     "and alignment stats for each reference.")
+    section.table(consensus_df, index=False)
     if consensus_df[''].isin({'': ['Warning']}).any():
-        report.markdown('**Warning: Some references < threshold accuracy**')
+        section.markdown('**Warning: Some references < threshold accuracy**')
     else:
         pass
     # Exec Summary infographic
-    report.markdown("### Total aligned reads")
+    section = report_doc.add_section()
+    section.markdown("## Total aligned reads")
     otr = [("On target reads",
             str("%.2f" % round(percentMapped, 2)) + '%',
             "percent", '')]
     exec_plot = aplanat.graphics.infographic(otr, ncols=1)
-    report.plot(exec_plot, key="exec-plot")
+    section.plot(exec_plot, key="exec-plot")
     # Quality
     quality = args.quality
     quality_df = pd.read_csv(quality, sep='\t')
     read_qual = fastcat.read_quality_plot(quality_df)
     read_length = fastcat.read_length_plot(quality_df)
-    report.markdown("## Read Quality Control")
-    report.markdown("This sections displays basic QC"
-                    "metrics indicating read data quality.")
-    report.plot(
+    section = report_doc.add_section()
+    section.markdown("## Read Quality Control")
+    section.markdown("This sections displays basic QC"
+                     "metrics indicating read data quality.")
+    section.plot(
         layout(
             [[read_length, read_qual]],
             sizing_mode="stretch_width"))
     # Assembly
-    report.markdown("## Assembly stats")
-    report.markdown(
+    section = report_doc.add_section()
+    section.markdown("## Assembly stats")
+    section.markdown(
         "The following summarises the statistics from the consensus assembly"
         "with the reference")
-    report.table(
+    section.table(
         seq_summary, index=False)
-    report.markdown("## Software versions", key="version-head")
-    report.markdown('''The table below highlights versions
-                    of key software used within the analysis''',
-                    key="version-desc")
+    section = report_doc.add_section()
+
+    section.markdown("## Software versions")
+    section.markdown('''The table below highlights versions
+                    of key software used within the analysis''')
     req = [
         'minimap2', 'samtools', 'racon', 'pomoxis', 'fastcat']
     versions = conda_versions.scrape_data(
         as_dataframe=True, include=req)
-    report.table(versions[['Name', 'Version', 'Build']], index=False)
-    report.markdown('''
+    section.table(versions[['Name', 'Version', 'Build']], index=False)
+    section = report_doc.add_section()
+
+    section.markdown('''
 ### About
 
 **Oxford Nanopore Technologies products are not intended for use for health
@@ -135,7 +147,7 @@ condition.**
 ---
 ''')
     # write report
-    report.write(args.report)
+    report_doc.write(args.output)
 
 
 if __name__ == "__main__":

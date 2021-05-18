@@ -148,7 +148,7 @@ process report {
     output:
         path "wf-transcript-target.html", emit: report
     """
-    report.py wf-transcript-target.html $alignStats $qualityPerRead --summaries assembly_stats/* --flagstats alignment_stats/* 
+    report.py wf-transcript-target.html $alignStats $qualityPerRead --revision $workflow.revision --commit $workflow.commitId --summaries assembly_stats/* --flagstats alignment_stats/* 
 
     """
     
