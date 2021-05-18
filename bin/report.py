@@ -4,8 +4,8 @@
 import argparse
 
 from aplanat.components import fastcat
-import aplanat.graphics
 from aplanat import report
+import aplanat.graphics
 from bokeh.layouts import layout
 import conda_versions
 import numpy as np
