@@ -108,7 +108,7 @@ the primary outputs of the pipeline:
 - `report.html`               file summarising the workflow analysis
 - `readsAligned.bam`          bam file of alignment of sequences with reference
 - `readsAligned.bam.bai`      Indexed alignment file
-- `consensus.fasta`           file containing consensus sequence of input sequences
+- `{name}Consensus.fasta`     file containing consensus sequence of input sequences per reference
 - `consensusAligned.bam`      bam file of consensus aligned with reference
 - `consensusAligned.bam.bai`  Indexed aligned consensus file
 
