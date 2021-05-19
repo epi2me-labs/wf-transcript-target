@@ -78,9 +78,13 @@ sequence files to be analysed.
 **Parameters:**
 
 - `fastq` specifies a *directory* path to FASTQ files (required)
-- `reference` specifies the reference file
+- `reference` *directtory* path to reference fasta file
 - `out_dir` the path for the output (default: output)
 - `bam`     optional boolean. Specifies output of Bam alignment files (default: false)
+- `threshold` optional integer represents the minimal acceptable percentage accuracy between reference and conesnsus 
+- `threads` Number of threads per process for alignment and sorting steps (4)
+- `prefix`       The prefix attached to each of the output filenames (optional)
+
 
 To run the workflow using Docker containers supply the `-profile standard`
 argument to `nextflow run`:
