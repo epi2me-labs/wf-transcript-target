@@ -78,9 +78,13 @@ sequence files to be analysed.
 **Parameters:**
 
 - `fastq` specifies a *directory* path to FASTQ files (required)
-- `reference` specifies the reference file
+- `reference` *directtory* path to reference fasta file
 - `out_dir` the path for the output (default: output)
 - `bam`     optional boolean. Specifies output of Bam alignment files (default: false)
+- `threshold` optional integer represents the minimal acceptable percentage accuracy between reference and conesnsus 
+- `threads` Number of threads per process for alignment and sorting steps (4)
+- `prefix`       The prefix attached to each of the output filenames (optional)
+
 
 To run the workflow using Docker containers supply the `-profile standard`
 argument to `nextflow run`:
@@ -95,7 +99,7 @@ nextflow run epi2me-labs/wf-transcript-target \
     -w ${OUTPUT}/workspace \
     -profile standard \
     --fastq test_data/fastq \
-    --reference test_data/references/reference.fasta \
+    --reference test_data/references \
     --out_dir ${OUTPUT}
 ```
 
@@ -105,10 +109,12 @@ The output of the pipeline will be found in `./output` for the above
 example. This directory contains the nextflow working directories alongside
 the primary outputs of the pipeline:
 
-- `report.html`          file summarising the workflow analysis
-- `readsAligned.bam`     bam file of alignment of sequences with reference
-- `readsAligned.bam.bai` Indexed alignment file
-- `consensus.fasta`      file containing consensus sequence of input sequences
+- `report.html`               file summarising the workflow analysis
+- `readsAligned.bam`          bam file of alignment of sequences with reference
+- `readsAligned.bam.bai`      Indexed alignment file
+- `{name}Consensus.fasta`     file containing consensus sequence of input sequences per reference
+- `consensusAligned.bam`      bam file of consensus aligned with reference
+- `consensusAligned.bam.bai`  Indexed aligned consensus file
 
 
 ### Running the workflow with Conda
