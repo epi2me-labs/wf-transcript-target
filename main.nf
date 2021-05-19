@@ -2,7 +2,6 @@
 
 nextflow.enable.dsl = 2
 
-
 def helpMessage(){
     log.info """
 Wf-transcript-target
