@@ -123,10 +123,10 @@ def main():
             sizing_mode="stretch_width"))
     # Assembly
     section = report_doc.add_section()
-    section.markdown("## Assembly stats")
+    section.markdown("## Consensus Alignment Statistics")
     section.markdown(
-        "The following summarises the statistics from the consensus assembly"
-        "with the reference")
+        "The following summarises the statistics from the consensus"
+        "aligned with the reference")
     section.table(
         seq_summary, index=False)
     section = report_doc.add_section()
@@ -140,18 +140,8 @@ def main():
         as_dataframe=True, include=req)
     section.table(versions[['Name', 'Version', 'Build']], index=False)
     section = report_doc.add_section()
-
-    section.markdown('''
-### About
-
-**Oxford Nanopore Technologies products are not intended for use for health
-assessment or to diagnose, treat, mitigate, cure or prevent any disease or
-condition.**
----
-''')
     # write report
     report_doc.write(args.output)
-
 
 if __name__ == "__main__":
     main()
