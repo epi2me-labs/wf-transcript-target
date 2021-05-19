@@ -143,5 +143,6 @@ def main():
     # write report
     report_doc.write(args.output)
 
+
 if __name__ == "__main__":
     main()
