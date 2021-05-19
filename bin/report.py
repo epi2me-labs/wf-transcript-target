@@ -4,8 +4,8 @@
 import argparse
 
 from aplanat import report
-from aplanat.components import fastcat
 import aplanat.graphics
+from aplanat.components import fastcat
 from bokeh.layouts import layout
 import conda_versions
 import numpy as np
@@ -44,6 +44,9 @@ def main():
         "quality",
         help="Fastcat quality results.")
     parser.add_argument(
+        "threshold",
+        help="Threashold percentage expected for consensus accuracy")
+    parser.add_argument(
         "--revision", default='unknown',
         help="git branch/tag of the executed workflow")
     parser.add_argument(
@@ -79,13 +82,14 @@ def main():
     percentageAligned = list(map((lambda x: (x/totalSeq) * 100), flag_stats))
     percentageAligned = list(np.around(np.array(percentageAligned), 2))
     # Output all in a table
+    threshold = int(args.threshold)
     tableConsensus = {'Reference name': refNames,
                       'Consensus Accuracy %': accuracyList,
                       'Number of reads aligned': flag_stats,
                       'Total Aligned %': percentageAligned}
     consensus_df = pd.DataFrame(tableConsensus)
     consensus_df[''] = np.where(
-        consensus_df['Consensus Accuracy %'] < 98.0,
+        consensus_df['Consensus Accuracy %'] < threshold,
         'Warning', '')
     section = report_doc.add_section()
     section.markdown("## Summary")
