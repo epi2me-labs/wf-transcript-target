@@ -14,7 +14,7 @@ Script Options:
     --reference         DIR     Reference FASTA files(required)
     --out_dir           DIR     Path for output (default: $params.out_dir)
     --prefix            STR     The prefix attached to each of the output filenames (optional)
-    --threads           INT     Number of threads per process for alignment and sorting steps (4)
+    --threads           INT     Numbexr of threads per process for alignment and sorting steps (4)
     --threshold        INT     Percentage expected for consensus accuracy (85)
     --bam               BOOL    If false, bam files will not be made available in output (default: false)
     --help
