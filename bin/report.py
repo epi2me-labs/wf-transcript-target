@@ -9,8 +9,9 @@ import aplanat.graphics
 from bokeh.layouts import layout
 import conda_versions
 import numpy as np
-import pandas as pd
 import alignment
+import pandas as pd
+
 
 
 def read_files(summaries, sep='\t'):
@@ -22,7 +23,7 @@ def read_files(summaries, sep='\t'):
 
 
 def read_consensus(consensus, sep='\t'):
-    """"Read a set of conensus files and extract sequences."""
+    """Read a set of conensus files and extract sequences."""
     consensus_dic = {}
     for fname in sorted(consensus):
         new_dic = alignment.referenceSeq(str(fname))

@@ -16,4 +16,3 @@ dependencies:
     - bamtools
     - python-edlib
     - biopython
-    - itertools

@@ -4,12 +4,11 @@
 from itertools import count, takewhile
 
 from Bio import SeqIO
-
 import edlib
 
 
 def sliced(seq, n, strict=False):
-    """Slice up a string"""
+    """Slice up a string."""
     iterator = takewhile(len, (seq[i: i + n] for i in count(0, n)))
     if strict:
         def ret():
