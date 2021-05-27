@@ -3,15 +3,14 @@
 
 import argparse
 
+import alignment
 from aplanat import report
 from aplanat.components import fastcat
 import aplanat.graphics
 from bokeh.layouts import layout
 import conda_versions
 import numpy as np
-import alignment
 import pandas as pd
-
 
 
 def read_files(summaries, sep='\t'):
