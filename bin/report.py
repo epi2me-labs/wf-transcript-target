@@ -8,7 +8,7 @@ from aplanat import report
 from aplanat.components import fastcat
 import aplanat.graphics
 from aplanat.lines import steps
-from bokeh.layouts import layout, gridplot
+from bokeh.layouts import gridplot, layout
 import conda_versions
 import numpy as np
 import pandas as pd

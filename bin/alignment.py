@@ -4,7 +4,6 @@
 from itertools import count, takewhile
 
 from Bio import SeqIO
-
 import edlib
 
 
