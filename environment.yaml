@@ -16,3 +16,4 @@ dependencies:
     - bamtools
     - python-edlib
     - biopython
+    - mosdepth

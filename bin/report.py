@@ -7,7 +7,8 @@ import alignment
 from aplanat import report
 from aplanat.components import fastcat
 import aplanat.graphics
-from bokeh.layouts import layout
+from aplanat.lines import steps
+from bokeh.layouts import layout, gridplot
 import conda_versions
 import numpy as np
 import pandas as pd
@@ -39,6 +40,27 @@ def read_flag_stat_files(flagstats, sep='\t'):
         totalSeq = int(alignStats.iat[0, 0])
         flagStatList.append(totalSeq)
     return flagStatList
+
+
+def depth_graph(bedFiles, sep='\t'):
+    """Create depth vs position graph."""
+    graphs = []
+    for fname in sorted(bedFiles):
+        binned_depth = pd.read_csv(
+            str(fname), sep=sep,
+            names=['ref', 'start', 'end', 'depth'])
+        p = steps(
+            [binned_depth['start']],
+            [binned_depth['depth']],
+            colors=['darkolivegreen'],
+            x_axis_label='Position along reference',
+            y_axis_label='Sequencing depth / Bases',
+            title=str(fname[8:-15:]))
+        p.title.align = "left"
+        p.title.text_font_size = "12px"
+        p.xaxis.formatter.use_scientific = False
+        graphs.append(p)
+    return graphs
 
 
 def main():
@@ -74,6 +96,9 @@ def main():
     parser.add_argument(
         "--consensus", nargs='+',
         help="consensus fasta sequences")
+    parser.add_argument(
+        "--bedFiles", nargs='+',
+        help="bed files for sequence depth")
     args = parser.parse_args()
 
     report_doc = report.WFReport(
@@ -137,6 +162,15 @@ def main():
         layout(
             [[read_length, read_qual]],
             sizing_mode="stretch_width"))
+    # Depth Coverage
+    section = report_doc.add_section()
+    section.markdown("## Depth of coverage")
+    section.markdown("The depth of coverage of alignments "
+                     "across the reference.")
+    depth = args.bedFiles
+    depthGraphs = depth_graph(depth)
+    section.plot(
+            gridplot(depthGraphs, ncols=2, plot_width=300, plot_height=300))
     # Assembly
     section = report_doc.add_section()
     section.markdown("## Consensus Alignment Statistics")
@@ -166,7 +200,7 @@ def main():
                     of key software used within the analysis''')
     req = [
         'minimap2', 'samtools', 'racon', 'pomoxis', 'fastcat', 'bamtools',
-        'python-edlib', 'biopython']
+        'python-edlib', 'biopython', 'mosdepth']
     versions = conda_versions.scrape_data(
         as_dataframe=True, include=req)
     section.table(versions[['Name', 'Version', 'Build']], index=False)

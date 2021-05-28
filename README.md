@@ -99,7 +99,7 @@ nextflow run epi2me-labs/wf-transcript-target \
     -w ${OUTPUT}/workspace \
     -profile standard \
     --fastq test_data/fastq \
-    --reference test_data/references \
+    --reference test_data/reference/reference.fasta \
     --out_dir ${OUTPUT}
 ```
 

@@ -4,21 +4,14 @@
 from itertools import count, takewhile
 
 from Bio import SeqIO
+
 import edlib
 
 
-def sliced(seq, n, strict=False):
+def sliced(seq, n):
     """Slice up a string."""
     iterator = takewhile(len, (seq[i: i + n] for i in count(0, n)))
-    if strict:
-        def ret():
-            for _slice in iterator:
-                if len(_slice) != n:
-                    raise ValueError("seq is not divisible by n.")
-                yield _slice
-        return iter(ret())
-    else:
-        return iterator
+    return iterator
 
 
 def alignment(query, target, splitnumber):
@@ -40,7 +33,7 @@ def alignment(query, target, splitnumber):
 
 
 def referenceSeq(filenames):
-    """Get sequence dictionary from reference file."""
+    """Get sequence dictionary from reference fasta file."""
     theFile = open(str(filenames))
     refDic = {}
     for seq_record in (SeqIO.parse(theFile, "fasta")):
