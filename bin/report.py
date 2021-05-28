@@ -3,6 +3,7 @@
 
 import argparse
 
+import alignment
 from aplanat import report
 from aplanat.components import fastcat
 import aplanat.graphics
@@ -18,6 +19,15 @@ def read_files(summaries, sep='\t'):
     for fname in sorted(summaries):
         dfs.append(pd.read_csv(fname, sep=sep))
     return pd.concat(dfs)
+
+
+def read_consensus(consensus, sep='\t'):
+    """Read a set of conensus files and extract sequences."""
+    consensus_dic = {}
+    for fname in sorted(consensus):
+        new_dic = alignment.referenceSeq(str(fname))
+        consensus_dic.update(new_dic)
+    return consensus_dic
 
 
 def read_flag_stat_files(flagstats, sep='\t'):
@@ -47,6 +57,9 @@ def main():
         "threshold",
         help="Threashold percentage expected for consensus accuracy")
     parser.add_argument(
+        "references",
+        help="Reference file input at start")
+    parser.add_argument(
         "--revision", default='unknown',
         help="git branch/tag of the executed workflow")
     parser.add_argument(
@@ -58,6 +71,9 @@ def main():
     parser.add_argument(
         "--flagstats", nargs='+',
         help="Flag stat summaries")
+    parser.add_argument(
+        "--consensus", nargs='+',
+        help="consensus fasta sequences")
     args = parser.parse_args()
 
     report_doc = report.WFReport(
@@ -129,13 +145,28 @@ def main():
         "aligned with the reference")
     section.table(
         seq_summary, index=False)
+    # Reference and consensus alignments
     section = report_doc.add_section()
-
+    section.markdown("## Alignment of Consensus and Reference")
+    section.markdown(
+        "Sequence alignment using Levenshtein (edit) distance.")
+    refFile = args.references
+    refseq = alignment.referenceSeq(str(refFile))
+    cons = read_consensus(args.consensus)
+    for item in (cons.keys()):
+        section.markdown("###" + str(item))
+        p = alignment.alignment(cons[str(item)], refseq[str(item)], 50)
+        section.markdown(str(p[1]))
+        section.markdown('Length of Consensus: ' + str(p[2]))
+        section.markdown('Length of Reference: ' + str(p[3]))
+        section.markdown("<pre>" + p[0] + "</pre>")
+    section = report_doc.add_section()
     section.markdown("## Software versions")
     section.markdown('''The table below highlights versions
                     of key software used within the analysis''')
     req = [
-        'minimap2', 'samtools', 'racon', 'pomoxis', 'fastcat', 'bamtools']
+        'minimap2', 'samtools', 'racon', 'pomoxis', 'fastcat', 'bamtools',
+        'python-edlib', 'biopython']
     versions = conda_versions.scrape_data(
         as_dataframe=True, include=req)
     section.table(versions[['Name', 'Version', 'Build']], index=False)

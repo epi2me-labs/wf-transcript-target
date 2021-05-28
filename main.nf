@@ -14,7 +14,7 @@ Script Options:
     --reference         DIR     Reference FASTA files(required)
     --out_dir           DIR     Path for output (default: $params.out_dir)
     --prefix            STR     The prefix attached to each of the output filenames (optional)
-    --threads           INT     Numbexr of threads per process for alignment and sorting steps (4)
+    --threads           INT     Number of threads per process for alignment and sorting steps (4)
     --threshold        INT     Percentage expected for consensus accuracy (85)
     --bam               BOOL    If false, bam files will not be made available in output (default: false)
     --help
@@ -124,6 +124,7 @@ process assessAssembly {
         path "*_stats.txt", emit: stats
     """
     assess_assembly -i $consensusSequence -r $reference -p "$refname" > result.txt
+   
     """
 }
 
@@ -134,12 +135,15 @@ process report {
     input:
         file "assembly_stats/*"
         file "alignment_stats/*"
+        file combinedRef
         file alignStats
+        file "consensus_seq/*"
         file qualityPerRead
     output:
         path "wf-transcript-target.html", emit: report
     """
     report.py wf-transcript-target.html $alignStats $qualityPerRead ${params.threshold} \
+    $combinedRef --consensus consensus_seq/* \
     --revision $workflow.revision --commit $workflow.commitId \
     --summaries assembly_stats/* --flagstats alignment_stats/*
     """
@@ -197,7 +201,9 @@ workflow pipeline {
         // create report
         report = report(assemblyStats.stats.collect(),
                         seperated.alignmentStats.collect(),
+                        combinedRef,
                         alignments.alignmentStats,
+                        consensus.seq.collect(),
                         quality.perRead
                         )
 
