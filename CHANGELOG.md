@@ -11,4 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic running of Transcript target and reporting.
 - Ability to input multiple references
 - Report
+- Depth coverage graphs
+- Alignments
 

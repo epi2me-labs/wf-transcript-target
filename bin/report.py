@@ -106,7 +106,6 @@ def main():
         revision=args.revision, commit=args.commit)
 
     flag_stats = read_flag_stat_files(args.flagstats)
-
     # Retrieve flag and consensus stats and create df
     seq_summary = read_files(args.summaries)
     statsdf = seq_summary
@@ -177,8 +176,10 @@ def main():
     section.markdown(
         "The following summarises the statistics from the consensus"
         "aligned with the reference")
-    section.table(
-        seq_summary, index=False)
+    seq_summary = statsdf.drop(['name'], 1)
+    seq_summary = seq_summary.rename(columns={'ref': 'Name'})
+    seq_summary = seq_summary.round({'ref_coverage': 4, 'iden': 4, 'acc': 4})
+    section.table(seq_summary)
     # Reference and consensus alignments
     section = report_doc.add_section()
     section.markdown("## Alignment of Consensus and Reference")
