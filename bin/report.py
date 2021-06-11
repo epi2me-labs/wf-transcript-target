@@ -204,7 +204,9 @@ def main():
         'python-edlib', 'biopython', 'mosdepth']
     versions = conda_versions.scrape_data(
         as_dataframe=True, include=req)
-    section.table(versions[['Name', 'Version', 'Build']], index=False)
+    section.table(versions[['Name', 'Version', 'Build']],
+                  sortable=False, paging=False,
+                  index=False, searchable=False)
     section = report_doc.add_section()
     # write report
     report_doc.write(args.output)

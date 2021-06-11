@@ -6,7 +6,7 @@ channels:
     - defaults
 dependencies:
     - python==3.8.*
-    - aplanat >=0.3.5
+    - aplanat >=0.4.0
     - pysam
     - fastcat
     - minimap2
