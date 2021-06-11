@@ -35,6 +35,20 @@ process fastcatQuality {
     """
 }
 
+
+process combineReferences {
+    label "wftranscripttarget"
+    cpus params.threads
+    input:
+        file "reference_*_.fasta"
+    output:
+        path "combined.fasta", emit: combined
+    """
+    cat reference_*_.fasta > "combined.fasta"
+    """
+}
+
+
 process alignReads {
     label "wftranscripttarget"
     cpus params.threads
@@ -153,6 +167,14 @@ workflow pipeline {
         reference
         fastq
     main:
+        // Get reference fasta files from dir path
+        reference_files = channel
+            .fromPath("${reference}{**,.}/*.{fasta,fa}", glob: true)
+            .collect()
+
+        // Cat the references together for alignment
+        combinedRef = combineReferences(reference_files)
+
         // Get fastq files from dir path
         fastq_files = channel
             .fromPath("${fastq}{**,.}/*.fastq", glob: true)
@@ -253,7 +275,7 @@ workflow {
     fastq = file(params.fastq, type: "dir", checkIfExists: true)
 
     // Acquire reference file
-    reference = file(params.reference, type: "file", checkIfExists: true)
+    reference = file(params.reference, type: "dir", checkIfExists: true)
 
     // Run Bioinformatics pipeline
     results = pipeline(reference, fastq)
