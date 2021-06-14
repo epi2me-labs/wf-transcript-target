@@ -11,7 +11,7 @@ Usage:
 
 Script Options:
     --fastq             DIR     FASTQ files (required)
-    --reference         DIR     Reference FASTA file (required)
+    --reference         FILE     Reference FASTA file (required)
     --out_dir           DIR     Path for output (default: $params.out_dir)
     --prefix            STR     The prefix attached to each of the output filenames (optional)
     --threads           INT     Number of threads per process for alignment and sorting steps (4)
@@ -32,19 +32,6 @@ process fastcatQuality {
         path "per-read.txt", emit: perRead
     """
     fastcat -f file-summary.txt -r per-read.txt *.fastq
-    """
-}
-
-
-process combineReferences {
-    label "wftranscripttarget"
-    cpus params.threads
-    input:
-        file "reference_*_.fasta"
-    output:
-        path "combined.fasta", emit: combined
-    """
-    cat reference_*_.fasta > "combined.fasta"
     """
 }
 
@@ -167,13 +154,6 @@ workflow pipeline {
         reference
         fastq
     main:
-        // Get reference fasta files from dir path
-        reference_files = channel
-            .fromPath("${reference}{**,.}/*.{fasta,fa}", glob: true)
-            .collect()
-
-        // Cat the references together for alignment
-        combinedRef = combineReferences(reference_files)
 
         // Get fastq files from dir path
         fastq_files = channel
