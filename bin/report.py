@@ -33,13 +33,13 @@ def read_consensus(consensus, sep='\t'):
 
 def read_flag_stat_files(flagstats, sep='\t'):
     """Read a set of flag stat files and extract total alignments."""
-    flagStatList = []
+    flag_stat_list = []
     for fname in sorted(flagstats):
-        alignStats = pd.read_csv(fname, sep='\t', header=None)
-        alignStats.reset_index()
-        totalSeq = int(alignStats.iat[0, 0])
-        flagStatList.append(totalSeq)
-    return flagStatList
+        align_stats = pd.read_csv(fname, sep='\t', header=None)
+        align_stats.reset_index()
+        total_seq = int(align_stats.iat[0, 0])
+        flag_stat_list.append(total_seq)
+    return flag_stat_list
 
 
 def depth_graph(bedFiles, sep='\t'):
@@ -70,7 +70,7 @@ def main():
         "output",
         help="Report output file.")
     parser.add_argument(
-        "alignmentStats",
+        "alignment_stats",
         help="Alignment stats file.")
     parser.add_argument(
         "quality",
@@ -110,24 +110,24 @@ def main():
     seq_summary = read_files(args.summaries)
     statsdf = seq_summary
     statsdf = statsdf.drop(['rstart', 'rend'], 1)
-    refNames, accuracyList = list(statsdf['ref']), list(statsdf['acc'])
-    accuracyList = list(np.around(np.array(accuracyList), 2))
-    alignStats = args.alignmentStats
-    alignStats = pd.read_csv(alignStats, sep='\t', header=None)
-    alignStats.reset_index()
+    ref_names, accuracy_list = list(statsdf['ref']), list(statsdf['acc'])
+    accuracy_list = list(np.around(np.array(accuracy_list), 2))
+    align_stats = args.alignment_stats
+    align_stats = pd.read_csv(align_stats, sep='\t', header=None)
+    align_stats.reset_index()
     # Retrieve total flag stats
-    totalSeq = int(alignStats.iat[0, 0])
-    mapped = int(alignStats.iat[4, 0])
-    percentMapped = (mapped/totalSeq)*100
-    percentageAligned = list(map((lambda x: (x/totalSeq) * 100), flag_stats))
-    percentageAligned = list(np.around(np.array(percentageAligned), 2))
+    total_seq = int(align_stats.iat[0, 0])
+    mapped = int(align_stats.iat[4, 0])
+    percent_mapped = (mapped/total_seq)*100
+    percentage_aligned = list(map((lambda x: (x/total_seq) * 100), flag_stats))
+    percentage_aligned = list(np.around(np.array(percentage_aligned), 2))
     # Output all in a table
     threshold = int(args.threshold)
-    tableConsensus = {'Reference name': refNames,
-                      'Consensus Accuracy %': accuracyList,
-                      'Number of reads aligned': flag_stats,
-                      'Total Aligned %': percentageAligned}
-    consensus_df = pd.DataFrame(tableConsensus)
+    table_consensus = {'Reference name': ref_names,
+                       'Consensus Accuracy %': accuracy_list,
+                       'Number of reads aligned': flag_stats,
+                       'Total Aligned %': percentage_aligned}
+    consensus_df = pd.DataFrame(table_consensus)
     consensus_df[''] = np.where(
         consensus_df['Consensus Accuracy %'] < threshold,
         'Warning', '')
@@ -144,7 +144,7 @@ def main():
     section = report_doc.add_section()
     section.markdown("## Total aligned reads")
     otr = [("On target reads",
-            str("%.2f" % round(percentMapped, 2)) + '%',
+            str("%.2f" % round(percent_mapped, 2)) + '%',
             "percent", '')]
     exec_plot = aplanat.graphics.infographic(otr, ncols=1)
     section.plot(exec_plot, key="exec-plot")
@@ -167,9 +167,9 @@ def main():
     section.markdown("The depth of coverage of alignments "
                      "across the reference.")
     depth = args.bedFiles
-    depthGraphs = depth_graph(depth)
+    depth_graphs = depth_graph(depth)
     section.plot(
-            gridplot(depthGraphs, ncols=2, plot_width=300, plot_height=300))
+            gridplot(depth_graphs, ncols=2, plot_width=300, plot_height=300))
     # Assembly
     section = report_doc.add_section()
     section.markdown("## Consensus Alignment Statistics")
@@ -185,8 +185,8 @@ def main():
     section.markdown("## Alignment of Consensus and Reference")
     section.markdown(
         "Sequence alignment using Levenshtein (edit) distance.")
-    refFile = args.references
-    refseq = alignment.referenceSeq(str(refFile))
+    ref_file = args.references
+    refseq = alignment.referenceSeq(str(ref_file))
     cons = read_consensus(args.consensus)
     for item in (cons.keys()):
         section.markdown("###" + str(item))

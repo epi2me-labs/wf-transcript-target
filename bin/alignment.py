@@ -16,19 +16,19 @@ def sliced(seq, n):
 def alignment(query, target, splitnumber):
     """Alignment function Needle is default."""
     aligned = edlib.align(query, target, task="path")
-    queryLen = len(query)
-    queryTar = len(target)
-    niceAligned = edlib.getNiceAlignment(aligned, query, target)
-    query = list(sliced(niceAligned['query_aligned'], splitnumber))
-    matched = list(sliced(niceAligned['matched_aligned'], splitnumber))
-    target = list(sliced(niceAligned['target_aligned'], splitnumber))
+    query_len = len(query)
+    query_target = len(target)
+    nice_aligned = edlib.getNiceAlignment(aligned, query, target)
+    query = list(sliced(nice_aligned['query_aligned'], splitnumber))
+    matched = list(sliced(nice_aligned['matched_aligned'], splitnumber))
+    target = list(sliced(nice_aligned['target_aligned'], splitnumber))
     formatted = str('Edit Distance: '+str(aligned['editDistance'])+'\n')
     total = ''
     for i in range(0, len(query)):
         total += 'Consensus  ' + query[i] + '<br>'
         total += 'Alignment  ' + matched[i] + '<br>'
         total += 'Reference  ' + target[i] + '<br>' + '<br>'
-    return total, formatted, queryLen, queryTar
+    return total, formatted, query_len, query_target
 
 
 def referenceSeq(filenames):
