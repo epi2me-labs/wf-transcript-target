@@ -15,7 +15,7 @@ Script Options:
     --out_dir           DIR     Path for output (default: $params.out_dir)
     --prefix            STR     The prefix attached to each of the output filenames (optional)
     --threads           INT     Number of threads per process for alignment and sorting steps (4)
-    --threshold        INT     Percentage expected for consensus accuracy (85)
+    --threshold         INT     Percentage expected for consensus accuracy (85)
     --bam               BOOL    If false, bam files will not be made available in output (default: false)
     --help
     
@@ -65,6 +65,7 @@ process alignReads {
 """
 }
 
+
 process createTuples {
     label "wftranscripttarget"
     cpus params.threads
@@ -86,11 +87,10 @@ process createTuples {
     samtools sort $reg -o "$refname".bam --threads $task.cpus
     samtools index "$refname".bam
     mosdepth -n --fast-mode --by 5 $refname "$refname".bam
-    
-    
     """
 
 }
+
 
 process consensusSeq {
     label "wftranscripttarget"
@@ -152,6 +152,8 @@ process report {
     --bedFiles bedFile/* --unmapped $unmapped
     """
 }
+
+
 // workflow module
 workflow pipeline {
     take:
@@ -219,6 +221,7 @@ workflow pipeline {
         results
 }
 
+
 process output {
     // publish inputs to output directory
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*", saveAs: { 
@@ -231,7 +234,6 @@ process output {
     echo "Writing output files"
     """
 }
-
 
 
 // entrypoint workflow
