@@ -82,7 +82,7 @@ process createTuples {
     samtools flagstat $reg -O tsv > "$refname"alignmentStats.tsv
     samtools view -h -o "$refname".sam $reg
     samtools fastq $reg > "$refname".fastq
-    grep -i "$refname" -A1 $reference > "$refname".fasta
+    zcat -f $reference | seqkit grep -r -p ^"$refname" > "$refname".fasta
     samtools sort $reg -o "$refname".bam --threads $task.cpus
     samtools index "$refname".bam
     mosdepth -n --fast-mode --by 5 $refname "$refname".bam
