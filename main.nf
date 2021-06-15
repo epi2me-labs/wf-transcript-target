@@ -161,7 +161,7 @@ workflow pipeline {
 
         // Get fastq files from dir path
         fastq_files = channel
-            .fromPath("${fastq}{**,.}/*.fastq", glob: true)
+            .fromPath("${fastq}{**,.}/*.fastq*", glob: true)
             .collect()
 
         // Check overall quality
