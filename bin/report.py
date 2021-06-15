@@ -7,7 +7,8 @@ import alignment
 from aplanat import report
 from aplanat.components import fastcat
 import aplanat.graphics
-from bokeh.layouts import layout
+from aplanat.lines import steps
+from bokeh.layouts import gridplot, layout
 import conda_versions
 import numpy as np
 import pandas as pd
@@ -32,13 +33,34 @@ def read_consensus(consensus, sep='\t'):
 
 def read_flag_stat_files(flagstats, sep='\t'):
     """Read a set of flag stat files and extract total alignments."""
-    flagStatList = []
+    flag_stat_list = []
     for fname in sorted(flagstats):
-        alignStats = pd.read_csv(fname, sep='\t', header=None)
-        alignStats.reset_index()
-        totalSeq = int(alignStats.iat[0, 0])
-        flagStatList.append(totalSeq)
-    return flagStatList
+        align_stats = pd.read_csv(fname, sep='\t', header=None)
+        align_stats.reset_index()
+        total_seq = int(align_stats.iat[0, 0])
+        flag_stat_list.append(total_seq)
+    return flag_stat_list
+
+
+def depth_graph(bedFiles, sep='\t'):
+    """Create depth vs position graph."""
+    graphs = []
+    for fname in sorted(bedFiles):
+        binned_depth = pd.read_csv(
+            str(fname), sep=sep,
+            names=['ref', 'start', 'end', 'depth'])
+        p = steps(
+            [binned_depth['start']],
+            [binned_depth['depth']],
+            colors=['darkolivegreen'],
+            x_axis_label='Position along reference',
+            y_axis_label='Sequencing depth / Bases',
+            title=str(fname[8:-15:]))
+        p.title.align = "left"
+        p.title.text_font_size = "12px"
+        p.xaxis.formatter.use_scientific = False
+        graphs.append(p)
+    return graphs
 
 
 def main():
@@ -48,7 +70,7 @@ def main():
         "output",
         help="Report output file.")
     parser.add_argument(
-        "alignmentStats",
+        "alignment_stats",
         help="Alignment stats file.")
     parser.add_argument(
         "quality",
@@ -74,36 +96,40 @@ def main():
     parser.add_argument(
         "--consensus", nargs='+',
         help="consensus fasta sequences")
+    parser.add_argument(
+        "--bedFiles", nargs='+',
+        help="bed files for sequence depth")
+    parser.add_argument(
+        "--unmapped", nargs='+',
+        help="unmapped fastcat stats")
     args = parser.parse_args()
-
     report_doc = report.WFReport(
         "Transcript target report", "wf-transcript-target",
         revision=args.revision, commit=args.commit)
 
     flag_stats = read_flag_stat_files(args.flagstats)
-
     # Retrieve flag and consensus stats and create df
     seq_summary = read_files(args.summaries)
     statsdf = seq_summary
     statsdf = statsdf.drop(['rstart', 'rend'], 1)
-    refNames, accuracyList = list(statsdf['ref']), list(statsdf['acc'])
-    accuracyList = list(np.around(np.array(accuracyList), 2))
-    alignStats = args.alignmentStats
-    alignStats = pd.read_csv(alignStats, sep='\t', header=None)
-    alignStats.reset_index()
+    ref_names, accuracy_list = list(statsdf['ref']), list(statsdf['acc'])
+    accuracy_list = list(np.around(np.array(accuracy_list), 2))
+    align_stats = args.alignment_stats
+    align_stats = pd.read_csv(align_stats, sep='\t', header=None)
+    align_stats.reset_index()
     # Retrieve total flag stats
-    totalSeq = int(alignStats.iat[0, 0])
-    mapped = int(alignStats.iat[4, 0])
-    percentMapped = (mapped/totalSeq)*100
-    percentageAligned = list(map((lambda x: (x/totalSeq) * 100), flag_stats))
-    percentageAligned = list(np.around(np.array(percentageAligned), 2))
+    total_seq = int(align_stats.iat[0, 0])
+    mapped = int(align_stats.iat[4, 0])
+    percent_mapped = (mapped/total_seq)*100
+    percentage_aligned = list(map((lambda x: (x/total_seq) * 100), flag_stats))
+    percentage_aligned = list(np.around(np.array(percentage_aligned), 2))
     # Output all in a table
     threshold = int(args.threshold)
-    tableConsensus = {'Reference name': refNames,
-                      'Consensus Accuracy %': accuracyList,
-                      'Number of reads aligned': flag_stats,
-                      'Total Aligned %': percentageAligned}
-    consensus_df = pd.DataFrame(tableConsensus)
+    table_consensus = {'Reference name': ref_names,
+                       'Consensus Accuracy %': accuracy_list,
+                       'Number of reads aligned': flag_stats,
+                       'Total Aligned %': percentage_aligned}
+    consensus_df = pd.DataFrame(table_consensus)
     consensus_df[''] = np.where(
         consensus_df['Consensus Accuracy %'] < threshold,
         'Warning', '')
@@ -117,12 +143,27 @@ def main():
     else:
         pass
     # Exec Summary infographic
+    unmapped = args.unmapped
+    print(unmapped)
+    unmapped_df = pd.read_csv(unmapped[0], delimiter='\t')
+    unmapped_read_qual = unmapped_df["mean_quality"].mean()
+    unmapped_read_length = unmapped_df["read_length"].mean()
     section = report_doc.add_section()
     section.markdown("## Total aligned reads")
-    otr = [("On target reads",
-            str("%.2f" % round(percentMapped, 2)) + '%',
-            "percent", '')]
-    exec_plot = aplanat.graphics.infographic(otr, ncols=1)
+    exec_summary = aplanat.graphics.InfoGraphItems()
+    exec_summary.append("Total reads",
+                        str(total_seq),
+                        "calculator", '')
+    exec_summary.append("On target reads",
+                        str("%.2f" % round(percent_mapped, 2)) + '%',
+                        "percent", '')
+    exec_summary.append("Unmapped mean Q",
+                        str("%.2f" % round(unmapped_read_qual, 2)),
+                        "clipboard-check", '')
+    exec_summary.append("Unmapped mean len",
+                        str("%.0f" % round(unmapped_read_length, 0)),
+                        "calculator", '')
+    exec_plot = aplanat.graphics.infographic(exec_summary.values(), ncols=4)
     section.plot(exec_plot, key="exec-plot")
     # Quality
     quality = args.quality
@@ -132,26 +173,37 @@ def main():
     section = report_doc.add_section()
     section.markdown("## Read Quality Control")
     section.markdown("This sections displays basic QC"
-                     "metrics indicating read data quality.")
+                     " metrics indicating read data quality.")
     section.plot(
         layout(
             [[read_length, read_qual]],
             sizing_mode="stretch_width"))
+    # Depth Coverage
+    section = report_doc.add_section()
+    section.markdown("## Depth of coverage")
+    section.markdown("The depth of coverage of alignments "
+                     "across the reference.")
+    depth = args.bedFiles
+    depth_graphs = depth_graph(depth)
+    section.plot(
+            gridplot(depth_graphs, ncols=2, plot_width=300, plot_height=300))
     # Assembly
     section = report_doc.add_section()
     section.markdown("## Consensus Alignment Statistics")
     section.markdown(
         "The following summarises the statistics from the consensus"
         "aligned with the reference")
-    section.table(
-        seq_summary, index=False)
+    seq_summary = statsdf.drop(['name'], 1)
+    seq_summary = seq_summary.rename(columns={'ref': 'Name'})
+    seq_summary = seq_summary.round({'ref_coverage': 4, 'iden': 4, 'acc': 4})
+    section.table(seq_summary)
     # Reference and consensus alignments
     section = report_doc.add_section()
     section.markdown("## Alignment of Consensus and Reference")
     section.markdown(
         "Sequence alignment using Levenshtein (edit) distance.")
-    refFile = args.references
-    refseq = alignment.referenceSeq(str(refFile))
+    ref_file = args.references
+    refseq = alignment.referenceSeq(str(ref_file))
     cons = read_consensus(args.consensus)
     for item in (cons.keys()):
         section.markdown("###" + str(item))
@@ -166,10 +218,12 @@ def main():
                     of key software used within the analysis''')
     req = [
         'minimap2', 'samtools', 'racon', 'pomoxis', 'fastcat', 'bamtools',
-        'python-edlib', 'biopython']
+        'python-edlib', 'biopython', 'mosdepth']
     versions = conda_versions.scrape_data(
         as_dataframe=True, include=req)
-    section.table(versions[['Name', 'Version', 'Build']], index=False)
+    section.table(versions[['Name', 'Version', 'Build']],
+                  sortable=False, paging=False,
+                  index=False, searchable=False)
     section = report_doc.add_section()
     # write report
     report_doc.write(args.output)
