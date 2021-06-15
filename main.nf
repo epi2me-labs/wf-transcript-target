@@ -49,6 +49,7 @@ process alignReads {
         path "readsAligned.bam", emit: alignmentBam
         path "readsAligned.bam.bai", emit: indexed
         path "*REF_*.bam", emit: splitBam
+        path "unmapped-per-read.txt", emit: unmapped
         
     """
     minimap2 -t $task.cpus -ax map-ont $reference *.fastq > alignment.sam
@@ -58,6 +59,8 @@ process alignReads {
     bamtools split -in readsAligned.bam -mapped
     mv readsAligned.MAPPED.bam alignedReads.bam
     bamtools split -in alignedReads.bam -reference
+    bedtools bamtofastq -i *UNMAPPED.bam -fq unmapped.fq
+    fastcat -f unmmapped-file-summary.txt -r unmapped-per-read.txt unmapped.fq
     
 """
 }
@@ -138,6 +141,7 @@ process report {
         file "consensus_seq/*"
         file qualityPerRead
         file "bedFile/*"
+        file unmapped
     output:
         path "wf-transcript-target.html", emit: report
     """
@@ -145,7 +149,7 @@ process report {
     $reference --consensus consensus_seq/* \
     --revision $workflow.revision --commit $workflow.commitId \
     --summaries assembly_stats/* --flagstats alignment_stats/* \
-    --bedFiles bedFile/*
+    --bedFiles bedFile/* --unmapped $unmapped
     """
 }
 // workflow module
@@ -198,7 +202,8 @@ workflow pipeline {
                         alignments.alignmentStats,
                         consensus.seq.collect(),
                         quality.perRead,
-                        seperated.bedFile.collect()
+                        seperated.bedFile.collect(),
+                        alignments.unmapped
                         )
 
         results = alignmentBam.concat(

@@ -99,8 +99,10 @@ def main():
     parser.add_argument(
         "--bedFiles", nargs='+',
         help="bed files for sequence depth")
+    parser.add_argument(
+        "--unmapped", nargs='+',
+        help="unmapped fastcat stats")
     args = parser.parse_args()
-
     report_doc = report.WFReport(
         "Transcript target report", "wf-transcript-target",
         revision=args.revision, commit=args.commit)
@@ -141,12 +143,27 @@ def main():
     else:
         pass
     # Exec Summary infographic
+    unmapped = args.unmapped
+    print(unmapped)
+    unmapped_df = pd.read_csv(unmapped[0], delimiter='\t')
+    unmapped_read_qual = unmapped_df["mean_quality"].mean()
+    unmapped_read_length = unmapped_df["read_length"].mean()
     section = report_doc.add_section()
     section.markdown("## Total aligned reads")
-    otr = [("On target reads",
-            str("%.2f" % round(percent_mapped, 2)) + '%',
-            "percent", '')]
-    exec_plot = aplanat.graphics.infographic(otr, ncols=1)
+    exec_summary = aplanat.graphics.InfoGraphItems()
+    exec_summary.append("Total reads",
+                        str(total_seq),
+                        "calculator", '')
+    exec_summary.append("On target reads",
+                        str("%.2f" % round(percent_mapped, 2)) + '%',
+                        "percent", '')
+    exec_summary.append("Unmapped mean Q",
+                        str("%.2f" % round(unmapped_read_qual, 2)),
+                        "clipboard-check", '')
+    exec_summary.append("Unmapped mean len",
+                        str("%.0f" % round(unmapped_read_length, 0)),
+                        "calculator", '')
+    exec_plot = aplanat.graphics.infographic(exec_summary.values(), ncols=4)
     section.plot(exec_plot, key="exec-plot")
     # Quality
     quality = args.quality
@@ -156,7 +173,7 @@ def main():
     section = report_doc.add_section()
     section.markdown("## Read Quality Control")
     section.markdown("This sections displays basic QC"
-                     "metrics indicating read data quality.")
+                     " metrics indicating read data quality.")
     section.plot(
         layout(
             [[read_length, read_qual]],
