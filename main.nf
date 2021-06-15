@@ -223,6 +223,7 @@ workflow pipeline {
 
 
 process output {
+    label "wftranscripttarget"
     // publish inputs to output directory
     publishDir "${params.out_dir}", mode: 'copy', pattern: "*", saveAs: { 
         f -> params.prefix ? "${params.prefix}-${f}" : "${f}" }
