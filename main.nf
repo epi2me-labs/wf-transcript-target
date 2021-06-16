@@ -143,9 +143,9 @@ process report {
         file "bedFile/*"
         file unmapped
     output:
-        path "wf-transcript-target.html", emit: report
+        path "wf-transcript-target-report.html", emit: report
     """
-    report.py wf-transcript-target.html $alignStats $qualityPerRead ${params.threshold} \
+    report.py wf-transcript-target-report.html $alignStats $qualityPerRead ${params.threshold} \
     $reference --consensus consensus_seq/* \
     --revision $workflow.revision --commit $workflow.commitId \
     --summaries assembly_stats/* --flagstats alignment_stats/* \
