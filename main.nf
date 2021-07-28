@@ -83,7 +83,7 @@ process createTuples {
     samtools flagstat $reg -O tsv > "$refname"alignmentStats.tsv
     samtools view -h -o "$refname".sam $reg
     samtools fastq $reg > "$refname".fastq
-    zcat -f $reference | seqkit grep -r -p ^"$refname" > "$refname".fasta
+    seqkit grep -r -p ^"$refname" $reference > "$refname".fasta
     samtools sort $reg -o "$refname".bam --threads $task.cpus
     samtools index "$refname".bam
     mosdepth -n --fast-mode --by 5 $refname "$refname".bam
@@ -142,6 +142,7 @@ process report {
         file qualityPerRead
         file "bedFile/*"
         file unmapped
+        file versions
     output:
         path "wf-transcript-target-report.html", emit: report
     """
@@ -149,7 +150,8 @@ process report {
     $reference --consensus consensus_seq/* \
     --revision $workflow.revision --commit $workflow.commitId \
     --summaries assembly_stats/* --flagstats alignment_stats/* \
-    --bedFiles bedFile/* --unmapped $unmapped
+    --bedFiles bedFile/* --unmapped $unmapped \
+    --versions $versions
     """
 }
 
@@ -197,6 +199,8 @@ workflow pipeline {
         alignmentBam = alignments.alignmentBam
         alignmentIndex = alignments.indexed
         consensusSeq = consensus.seq
+        // software versions
+        software_versions = projectDir + '/data/versions.csv'
         // create report
         report = report(assemblyStats.stats.collect(),
                         seperated.alignmentStats.collect(),
@@ -205,7 +209,8 @@ workflow pipeline {
                         consensus.seq.collect(),
                         quality.perRead,
                         seperated.bedFile.collect(),
-                        alignments.unmapped
+                        alignments.unmapped,
+                        software_versions
                         )
 
         results = alignmentBam.concat(

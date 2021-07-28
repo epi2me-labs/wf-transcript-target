@@ -6,10 +6,10 @@ import argparse
 import alignment
 from aplanat import report
 from aplanat.components import fastcat
+from aplanat.components import simple as scomponents
 import aplanat.graphics
 from aplanat.lines import steps
 from bokeh.layouts import gridplot, layout
-import conda_versions
 import numpy as np
 import pandas as pd
 
@@ -102,6 +102,9 @@ def main():
     parser.add_argument(
         "--unmapped", nargs='+',
         help="unmapped fastcat stats")
+    parser.add_argument(
+        "--versions", required=True,
+        help="directory containing CSVs containing name,version.")
     args = parser.parse_args()
     report_doc = report.WFReport(
         "Transcript target report", "wf-transcript-target",
@@ -216,15 +219,8 @@ def main():
     section.markdown("## Software versions")
     section.markdown('''The table below highlights versions
                     of key software used within the analysis''')
-    req = [
-        'minimap2', 'samtools', 'racon', 'pomoxis', 'fastcat', 'bamtools',
-        'python-edlib', 'biopython', 'mosdepth']
-    versions = conda_versions.scrape_data(
-        as_dataframe=True, include=req)
-    section.table(versions[['Name', 'Version', 'Build']],
-                  sortable=False, paging=False,
-                  index=False, searchable=False)
-    section = report_doc.add_section()
+    section = report_doc.add_section(
+              section=scomponents.version_table(args.versions))
     # write report
     report_doc.write(args.output)
 
