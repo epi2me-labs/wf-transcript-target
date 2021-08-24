@@ -104,7 +104,10 @@ def main():
         help="unmapped fastcat stats")
     parser.add_argument(
         "--versions", required=True,
-        help="directory containing CSVs containing name,version.")
+        help="CSV containing name, version.")
+    parser.add_argument(
+        "--parameters", required=True,
+        help="JSON of parameters used for wf")
     args = parser.parse_args()
     report_doc = report.WFReport(
         "Transcript target report", "wf-transcript-target",
@@ -221,6 +224,9 @@ def main():
                     of key software used within the analysis''')
     section = report_doc.add_section(
               section=scomponents.version_table(args.versions))
+    # Params reporting
+    report_doc.add_section(
+        section=scomponents.params_table(args.parameters))
     # write report
     report_doc.write(args.output)
 
