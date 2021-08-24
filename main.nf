@@ -1,5 +1,6 @@
 #!/usr/bin/env nextflow
 
+import groovy.json.JsonBuilder
 nextflow.enable.dsl = 2
 
 def helpMessage(){
@@ -130,6 +131,39 @@ process assessAssembly {
 }
 
 
+process getParams {
+    label "wftranscripttarget"
+    cpus 1
+    output:
+        path "params.json"
+    script:
+        def paramsJSON = new JsonBuilder(params).toPrettyString()
+    """
+    # Output nextflow params object to JSON
+    echo '$paramsJSON' > params.json
+    """
+}
+
+
+process getVersions {
+    label "wftranscripttarget"
+    cpus 1
+    output:
+        path "versions.txt"
+    
+    """
+    minimap2 --version | sed 's/^/minimap2,/' >> versions.txt
+    samtools --version | head -n 1 | sed 's/ /,/' >> versions.txt
+    bamtools --version | head -2 | tail -1 | sed 's/ /,/' >> versions.txt
+    bedtools --version | sed 's/ /,/' >> versions.txt
+    seqkit version | sed 's/ /,/' >> versions.txt
+    mosdepth --version | sed 's/ /,/'  >> versions.txt
+    racon --version | sed 's/^/racon,/'  >> versions.txt
+    fastcat --version | sed 's/^/fastcat,/' >> versions.txt
+    python -c "import pomoxis; print(pomoxis.__version__)" | sed 's/^/pomoxis,/'  >> versions.txt
+    """
+}
+
 process report {
     label "wftranscripttarget"
     cpus 1
@@ -143,6 +177,7 @@ process report {
         file "bedFile/*"
         file unmapped
         file versions
+        path "params.json"
     output:
         path "wf-transcript-target-report.html", emit: report
     """
@@ -151,7 +186,8 @@ process report {
     --revision $workflow.revision --commit $workflow.commitId \
     --summaries assembly_stats/* --flagstats alignment_stats/* \
     --bedFiles bedFile/* --unmapped $unmapped \
-    --versions $versions
+    --versions $versions \
+    --parameters params.json
     """
 }
 
@@ -200,7 +236,8 @@ workflow pipeline {
         alignmentIndex = alignments.indexed
         consensusSeq = consensus.seq
         // software versions
-        software_versions = projectDir + '/data/versions.csv'
+        software_versions = getVersions()
+        params_json = getParams()
         // create report
         report = report(assemblyStats.stats.collect(),
                         seperated.alignmentStats.collect(),
@@ -210,7 +247,8 @@ workflow pipeline {
                         quality.perRead,
                         seperated.bedFile.collect(),
                         alignments.unmapped,
-                        software_versions
+                        software_versions,
+                        params_json
                         )
 
         results = alignmentBam.concat(
