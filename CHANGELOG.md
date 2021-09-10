@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Version table.
 - Parameter table.
+- Option to add suffix to HTML report name.
+- Error message if fastq input file evaluates to null.
 
 ## [v0.0.2]
 ### Changed
@@ -23,4 +25,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Depth coverage graphs
 - Alignments
 - Unmapped stats
-
