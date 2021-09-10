@@ -18,6 +18,7 @@ Script Options:
     --threads           INT     Number of threads per process for alignment and sorting steps (4)
     --threshold         INT     Percentage expected for consensus accuracy (85)
     --bam               BOOL    If false, bam files will not be made available in output (default: false)
+    --report_name     STR     Optional report suffix (default: $params.report_name)
     --help
     
 """
@@ -179,9 +180,12 @@ process report {
         file versions
         path "params.json"
     output:
-        path "wf-transcript-target-report.html", emit: report
+        path "wf-transcript-target-*.html", emit: report
+    script:
+        report_name = "wf-transcript-target-" + params.report_name + '.html'
+
     """
-    report.py wf-transcript-target-report.html $alignStats $qualityPerRead ${params.threshold} \
+    report.py $report_name $alignStats $qualityPerRead ${params.threshold} \
     $reference --consensus consensus_seq/* \
     --revision $workflow.revision --commit $workflow.commitId \
     --summaries assembly_stats/* --flagstats alignment_stats/* \
