@@ -3,37 +3,15 @@
 import groovy.json.JsonBuilder
 nextflow.enable.dsl = 2
 
-def helpMessage(){
-    log.info """
-Wf-transcript-target
-
-Usage:
-    nextflow run epi2melabs/wf-transcript-target [options]
-
-Script Options:
-    --fastq             DIR     FASTQ files (required)
-    --reference         FILE     Reference FASTA file (required)
-    --out_dir           DIR     Path for output (default: $params.out_dir)
-    --prefix            STR     The prefix attached to each of the output filenames (optional)
-    --threads           INT     Number of threads per process for alignment and sorting steps (4)
-    --threshold         INT     Percentage expected for consensus accuracy (85)
-    --bam               BOOL    If false, bam files will not be made available in output (default: false)
-    --report_name     STR     Optional report suffix (default: $params.report_name)
-    --help
-    
-"""
-}
-
-
 process fastcatQuality {
     label "wftranscripttarget"
     cpus params.threads
-    input:
+    input: 
         file "reads_*.fastq"
     output:
         path "per-read.txt", emit: perRead
     """
-    fastcat -f file-summary.txt -r per-read.txt *.fastq
+    fastcat -f file-summary.txt -r per-read.txt *.fastq 
     """
 }
 

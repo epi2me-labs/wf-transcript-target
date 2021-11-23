@@ -1,0 +1,110 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
+    "title": ". pipeline parameters",
+    "description": "",
+    "type": "object",
+    "definitions": {
+        "input_output_options": {
+            "title": "Input/output options",
+            "type": "object",
+            "fa_icon": "fas fa-terminal",
+            "description": "Define where the pipeline should find input data and save output data.",
+            "properties": {
+                "fastq": {
+                    "type": "string",
+                    "description": "Directory containing fastq input files."
+                },
+                "reference": {
+                    "type": "string",
+                    "description": "Reference FASTA file."
+                },
+                "out_dir": {
+                    "type": "string",
+                    "default": "output",
+                    "description": "Directory for output of all user-facing files."
+                },
+                "bam": {
+                    "type": "boolean",
+                    "description": "If false, bam files will not be made available in output (default: false)"
+                }
+            },
+            "required": [
+                "fastq",
+                "reference"
+            ]
+        },
+        "meta_data": {
+            "title": "Meta data",
+            "type": "object",
+            "fa_icon": "fas fa-university",
+            "description": "Parameters used to describe centralised config profiles. These should not be edited.",
+            "help_text": "The centralised nf-core configuration profiles use a handful of pipeline parameters to describe themselves. This information is then printed to the Nextflow log when you run a pipeline. You should not need to change these values when you run a pipeline.",
+            "properties": {
+                "report_name": {
+                    "type": "string",
+                    "description": "Output report filename suffix.",
+                    "default": "report"
+                }
+            }
+        },
+        "advanced_options": {
+            "title": "Advanced options",
+            "type": "object",
+            "fa_icon": "fab fa-acquisitions-incorporated",
+            "description": "Data filtering and algorithm options",
+            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
+            "properties": {
+                "threshold": {
+                    "type": "integer",
+                    "default": 85,
+                    "description": "Percentage expected for consensus accuracy"
+                },
+                "prefix": {
+                    "type": "string",
+                    "description": "The prefix attached to each of the output filenames."
+                }
+            }
+        },
+        "generic_options": {
+            "title": "Generic options",
+            "type": "object",
+            "fa_icon": "fas fa-file-import",
+            "description": "Less common options for the pipeline, typically set in a config file.",
+            "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
+            "properties": {
+                "help": {
+                    "type": "boolean",
+                    "description": "Display help text.",
+                    "fa_icon": "fas fa-question-circle",
+                    "hidden": true
+                },
+                "threads": {
+                    "type": "integer",
+                    "default": 4,
+                    "description": "Max number of threads to use for each process."
+                },
+                "wfversion": {
+                    "type": "string",
+                    "default": "v0.0.2",
+                    "hidden": true,
+                    "description": "Directory containing fastq input files."
+                }
+            }
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/input_output_options"
+        },
+        {
+            "$ref": "#/definitions/meta_data"
+        },
+        {
+            "$ref": "#/definitions/advanced_options"
+        },
+        {
+            "$ref": "#/definitions/generic_options"
+        }
+    ]
+}
