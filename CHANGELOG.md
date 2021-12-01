@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parameter table.
 - Option to add suffix to HTML report name.
 - Error message if fastq input file evaluates to null.
+- Singularity profile.
+- Ping.
+- Input fastq error messages.
 
 ## [v0.0.2]
 ### Changed

@@ -3,15 +3,19 @@
 import groovy.json.JsonBuilder
 nextflow.enable.dsl = 2
 
+include { fastq_ingress } from './lib/fastqingress' 
+include { start_ping; end_ping } from './lib/ping'
+
 process fastcatQuality {
     label "wftranscripttarget"
     cpus params.threads
     input: 
-        file "reads_*.fastq"
+         tuple path(directory), val(sample_id), val(type)
     output:
         path "per-read.txt", emit: perRead
+        path "*.fastq", emit: concat_reads
     """
-    fastcat -f file-summary.txt -r per-read.txt *.fastq 
+    fastcat -s ${sample_id} -r per-read.txt -x ${directory} > all_reads.fastq
     """
 }
 
@@ -20,7 +24,7 @@ process alignReads {
     label "wftranscripttarget"
     cpus params.threads
     input:
-        file "reads_*.fastq"
+        file concat_reads
         file reference
 
     output:
@@ -32,7 +36,7 @@ process alignReads {
         path "unmapped-per-read.txt", emit: unmapped
         
     """
-    minimap2 -t $task.cpus -ax map-ont $reference *.fastq > alignment.sam
+    minimap2 -t $task.cpus -ax map-ont $reference $concat_reads > alignment.sam
     samtools flagstat alignment.sam -O tsv > alignmentStats.tsv
     samtools sort alignment.sam -o readsAligned.bam --threads $task.cpus
     samtools index readsAligned.bam
@@ -50,8 +54,8 @@ process createTuples {
     label "wftranscripttarget"
     cpus params.threads
     input:
-        each file(reg)
-        file reference
+        path reg
+        file "reference"
     output:
         tuple val("$refname"), path("*.sam"), path("*.fastq"), path("*.fasta"), emit: eachAlignment
         path "*.tsv", emit: alignmentStats
@@ -60,7 +64,8 @@ process createTuples {
         refname = "$reg".split(/\./)[1].substring(4);
         
     """
-    samtools flagstat $reg -O tsv > "$refname"alignmentStats.tsv
+    echo $reg
+    samtools flagstat $reg -O tsv > "$refname".alignmentStats.tsv
     samtools view -h -o "$refname".sam $reg
     samtools fastq $reg > "$refname".fastq
     seqkit grep -r -p ^"$refname" $reference > "$refname".fasta
@@ -181,19 +186,15 @@ workflow pipeline {
         fastq
     main:
 
-        // Get fastq files from dir path
-        fastq_files = channel
-            .fromPath("${fastq}{**,.}/*.fastq*", glob: true)
-            .collect()
-
         // Check overall quality
-        quality = fastcatQuality(fastq_files)
-
+        quality = fastcatQuality(fastq)
+ 
         // Align the ref and samples and output one bam per reference
-        alignments = alignReads(fastq_files, reference)
+        alignments = alignReads(quality.concat_reads, reference)
+   
 
         // Create tuples with data needed for Racon(name, fastq, sam, fasta)
-        seperated = createTuples(alignments.splitBam, reference)
+        seperated = createTuples(alignments.splitBam.flatten(), reference)
 
         // Find consensus for each reference
         consensus = consensusSeq(seperated.eachAlignment)
@@ -244,7 +245,9 @@ workflow pipeline {
 
     emit:
         results
+        telemetry = params_json
 }
+
 
 
 process output {
@@ -263,7 +266,10 @@ process output {
 
 
 // entrypoint workflow
+WorkflowMain.initialise(workflow, params, log)
 workflow {
+    // Start ping
+    start_ping()
 
     if (params.help) {
         helpMessage()
@@ -284,8 +290,8 @@ workflow {
         exit 1
     }
 
-    // Acquire fastq test directory
-    fastq = file(params.fastq, type: "dir", checkIfExists: true)
+    fastq = fastq_ingress(
+        params.fastq, params.out_dir, params.sample, params.sample_sheet, params.sanitize_fastq)
 
     // Acquire reference file
     reference = file(params.reference, type: "dir", checkIfExists: true)
@@ -294,6 +300,9 @@ workflow {
     results = pipeline(reference, fastq)
 
     // output files
-    output(results)
+    output(results[0])
+
+    // End ping
+    end_ping(pipeline.out.telemetry)
 
 }
