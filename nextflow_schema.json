@@ -1,8 +1,9 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
-    "title": ". pipeline parameters",
-    "description": "",
+    "title": "epi2me-labs/wf-transcript-target",
+    "description": "Review and consolidates transcripts of interest from direct RNA sequencing collections.",
+    "url": "https://github.com/epi2me-labs/wf-transcript-target",
     "type": "object",
     "definitions": {
         "input_output_options": {
@@ -13,10 +14,13 @@
             "properties": {
                 "fastq": {
                     "type": "string",
-                    "description": "Directory containing fastq input files."
+                    "format": "path",
+                    "description": "A fastq file or directory containing fastq input files or directories of input files.",
+                    "help_text": "If directories named \\\"barcode*\\\" are found under the `--fastq` directory the data is assumed to be multiplex and each barcode directory will be processed independently. If `.fastq(.gz)` files are found under the `--fastq` directory the sample is assumed to not be multiplexed. In this second case `--samples` should be a simple name rather than a CSV file."
                 },
                 "reference": {
                     "type": "string",
+                    "format": "file-path",
                     "description": "Reference FASTA file."
                 },
                 "sample": {
@@ -25,6 +29,7 @@
                 },
                 "sample_sheet": {
                     "type": "string",
+                    "format": "file-path",
                     "description": "CSV file with columns named `barcode`, `sample_name` and `type`. Permissible if passing a directory containing barcodeXX sub-directories."
                 },
                 "sanitize_fastq": {
