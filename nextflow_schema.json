@@ -69,7 +69,6 @@
                     "default": false,
                     "description": "Enable to prevent sending a workflow ping."
                 }
-
             }
         },
         "advanced_options": {
@@ -130,5 +129,9 @@
         {
             "$ref": "#/definitions/generic_options"
         }
-    ]
+    ],
+    "docs": {
+        "intro": "## Introduction\n\nThis workflow is suitable for generating summary information from a small number of user-supplied transcripts\nof interest. \n\nIn order to do this, an alignment of direct RNA reads to the reference transcripts is done with [minimap2](https://github.com/lh3/minimap2).\nReads mapping to the reference transcripts are used to create consensus assemblies using\n[racon](https://github.com/isovic/racon), which are then compared to the original reference sequences. \n\n\n\n\n",
+        "links": "## Useful links\n\n* [nextflow](https://www.nextflow.io/)\n* [docker](https://www.docker.com/products/docker-desktop)\n* [conda](https://docs.conda.io/en/latest/miniconda.html)\n"
+    }
 }
