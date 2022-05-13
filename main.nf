@@ -235,7 +235,6 @@ workflow pipeline {
                         )
 
         results = alignmentBam.concat(
-            alignments.alignmentBam,
             alignmentIndex,
             consensusSeq,
             report,

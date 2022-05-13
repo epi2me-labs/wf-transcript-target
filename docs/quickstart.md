@@ -1,22 +1,3 @@
-# Transcript Target Workflow
-
-This repository contains a [nextflow](https://www.nextflow.io/) workflow
-to review and consolidate transcripts of interest from direct RNA sequencing collections. 
-
-
-
-## Introduction
-
-This workflow is suitable for generating summary information from a small number of user-supplied transcripts
-of interest. 
-
-In order to do this, an alignment of direct RNA reads to the reference transcripts is done with [minimap2](https://github.com/lh3/minimap2).
-Reads mapping to the reference transcripts are used to create consensus assemblies using
-[racon](https://github.com/isovic/racon), which are then compared to the original reference sequences. 
-
-
-
-
 ## Quickstart
 
 The workflow uses [nextflow](https://www.nextflow.io/) to manage compute and 
@@ -51,8 +32,3 @@ The primary outputs of the workflow include:
 * a BAM alignment file of all input reads with reference,
 * fasta file containing consensus sequence of input sequences per reference,
 * a BAM bam file of final consensus aligned with reference
-## Useful links
-
-* [nextflow](https://www.nextflow.io/)
-* [docker](https://www.docker.com/products/docker-desktop)
-* [conda](https://docs.conda.io/en/latest/miniconda.html)

@@ -131,18 +131,20 @@ def main():
     percentage_aligned = list(np.around(np.array(percentage_aligned), 2))
     # Output all in a table
     threshold = int(args.threshold)
-    table_consensus = {'Reference name': ref_names,
-                       'Consensus Accuracy %': accuracy_list,
-                       'Number of reads aligned': flag_stats,
-                       'Total Aligned %': percentage_aligned}
+    table_consensus = {
+        'Reference name': ref_names,
+        'Consensus Accuracy %': accuracy_list,
+        'Number of reads aligned': flag_stats,
+        'Total Aligned %': percentage_aligned}
     consensus_df = pd.DataFrame(table_consensus)
     consensus_df[''] = np.where(
         consensus_df['Consensus Accuracy %'] < threshold,
         'Warning', '')
     section = report_doc.add_section()
     section.markdown("## Summary")
-    section.markdown(" This table summarises the consensus accuracy",
-                     "and alignment stats for each reference.")
+    section.markdown(
+        " This table summarises the consensus accuracy",
+        "and alignment stats for each reference.")
     section.table(consensus_df, index=False)
     if consensus_df[''].isin({'': ['Warning']}).any():
         section.markdown('**Warning: Some references < threshold accuracy**')
@@ -157,18 +159,22 @@ def main():
     section = report_doc.add_section()
     section.markdown("## Total aligned reads")
     exec_summary = aplanat.graphics.InfoGraphItems()
-    exec_summary.append("Total reads",
-                        str(total_seq),
-                        "calculator", '')
-    exec_summary.append("On target reads",
-                        str("%.2f" % round(percent_mapped, 2)) + '%',
-                        "percent", '')
-    exec_summary.append("Unmapped mean Q",
-                        str("%.2f" % round(unmapped_read_qual, 2)),
-                        "clipboard-check", '')
-    exec_summary.append("Unmapped mean len",
-                        str("%.0f" % round(unmapped_read_length, 0)),
-                        "calculator", '')
+    exec_summary.append(
+        "Total reads",
+        str(total_seq),
+        "calculator", '')
+    exec_summary.append(
+        "On target reads",
+        str("%.2f" % round(percent_mapped, 2)) + '%',
+        "percent", '')
+    exec_summary.append(
+        "Unmapped mean Q",
+        str("%.2f" % round(unmapped_read_qual, 2)),
+        "clipboard-check", '')
+    exec_summary.append(
+        "Unmapped mean len",
+        str("%.0f" % round(unmapped_read_length, 0)),
+        "calculator", '')
     exec_plot = aplanat.graphics.infographic(exec_summary.values(), ncols=4)
     section.plot(exec_plot, key="exec-plot")
     # Quality
@@ -178,8 +184,9 @@ def main():
     read_length = fastcat.read_length_plot(quality_df)
     section = report_doc.add_section()
     section.markdown("## Read Quality Control")
-    section.markdown("This sections displays basic QC"
-                     " metrics indicating read data quality.")
+    section.markdown(
+        "This sections displays basic QC"
+        " metrics indicating read data quality.")
     section.plot(
         layout(
             [[read_length, read_qual]],
@@ -187,8 +194,9 @@ def main():
     # Depth Coverage
     section = report_doc.add_section()
     section.markdown("## Depth of coverage")
-    section.markdown("The depth of coverage of alignments "
-                     "across the reference.")
+    section.markdown(
+        "The depth of coverage of alignments "
+        "across the reference.")
     depth = args.bedFiles
     depth_graphs = depth_graph(depth)
     section.plot(
@@ -223,7 +231,7 @@ def main():
     section.markdown('''The table below highlights versions
                     of key software used within the analysis''')
     section = report_doc.add_section(
-              section=scomponents.version_table(args.versions))
+        section=scomponents.version_table(args.versions))
     # Params reporting
     report_doc.add_section(
         section=scomponents.params_table(args.parameters))
